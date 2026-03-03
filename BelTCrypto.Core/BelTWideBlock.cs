@@ -1,10 +1,9 @@
-﻿using System.Buffers.Binary;
+﻿namespace BelTCrypto.Core;
 
-namespace BelTCrypto.Core;
-
-public sealed class BelTWideBlock(BelTBlock block)
+public sealed class BelTWideBlock(BelTBlock block) : IDisposable
 {
     private readonly BelTBlock _block = block ?? throw new ArgumentNullException(nameof(block));
+    private bool _disposed;
     public void Encrypt(ReadOnlySpan<byte> input, Span<byte> output)
     {
         // 1. Установить r <- X
@@ -124,5 +123,10 @@ public sealed class BelTWideBlock(BelTBlock block)
 
         // 4. Установить X <- r
         r.CopyTo(output);
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
     }
 }

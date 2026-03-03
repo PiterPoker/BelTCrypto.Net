@@ -1,8 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11520.95 d18.3
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BelTCrypto.Core", "BelTCrypto.Core\BelTCrypto.Core.csproj", "{F0028337-2632-45C3-B24D-56BAEA3E076A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BelTCrypto.Tests", "BelTCrypto.Tests\BelTCrypto.Tests.csproj", "{1468DBD4-4F1E-44FB-8CF5-A82743658B52}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BelTCrypto.Net", "BelTCrypto.Net\BelTCrypto.Net.csproj", "{0B803334-3060-413B-895B-B688A27C8FED}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,8 +43,23 @@ Global
 		{1468DBD4-4F1E-44FB-8CF5-A82743658B52}.Release|x64.Build.0 = Release|Any CPU
 		{1468DBD4-4F1E-44FB-8CF5-A82743658B52}.Release|x86.ActiveCfg = Release|Any CPU
 		{1468DBD4-4F1E-44FB-8CF5-A82743658B52}.Release|x86.Build.0 = Release|Any CPU
+		{0B803334-3060-413B-895B-B688A27C8FED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B803334-3060-413B-895B-B688A27C8FED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B803334-3060-413B-895B-B688A27C8FED}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0B803334-3060-413B-895B-B688A27C8FED}.Debug|x64.Build.0 = Debug|Any CPU
+		{0B803334-3060-413B-895B-B688A27C8FED}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0B803334-3060-413B-895B-B688A27C8FED}.Debug|x86.Build.0 = Debug|Any CPU
+		{0B803334-3060-413B-895B-B688A27C8FED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B803334-3060-413B-895B-B688A27C8FED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B803334-3060-413B-895B-B688A27C8FED}.Release|x64.ActiveCfg = Release|Any CPU
+		{0B803334-3060-413B-895B-B688A27C8FED}.Release|x64.Build.0 = Release|Any CPU
+		{0B803334-3060-413B-895B-B688A27C8FED}.Release|x86.ActiveCfg = Release|Any CPU
+		{0B803334-3060-413B-895B-B688A27C8FED}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {729DCD1A-D1DB-4A0C-9FD0-9F4093B07CAF}
 	EndGlobalSection
 EndGlobal

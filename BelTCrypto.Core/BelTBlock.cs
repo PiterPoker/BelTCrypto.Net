@@ -1,10 +1,13 @@
 ﻿using System.Buffers.Binary;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
 namespace BelTCrypto.Core;
 
-public sealed class BelTBlock
+public sealed class BelTBlock : IDisposable
 {
-    private readonly uint[] _roundKeys;
+    private readonly uint[] _roundKeys; 
+    private bool _disposed;
 
     public BelTBlock(ReadOnlySpan<byte> key)
         : this()
@@ -164,5 +167,17 @@ public sealed class BelTBlock
         {
             _roundKeys[i] = BinaryPrimitives.ReadUInt32LittleEndian(key.Slice(i * 4, 4));
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+
+        if (_roundKeys != null)
+        {
+            var span = MemoryMarshal.AsBytes(_roundKeys.AsSpan());
+            CryptographicOperations.ZeroMemory(span);
+        }
+        _disposed = true;
     }
 }
