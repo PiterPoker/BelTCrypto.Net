@@ -1,20 +1,20 @@
 ﻿using System.Buffers.Binary;
-using System.Runtime.CompilerServices;
 
 namespace BelTCrypto.Core;
 
 public sealed class BelTBlock
 {
-    private readonly uint[] _roundKeys = new uint[8];
+    private readonly uint[] _roundKeys;
 
     public BelTBlock(ReadOnlySpan<byte> key)
+        : this()
     {
-        if (key.Length != 32) throw new ArgumentException("Key must be 256 bits.");
+        this.GenerateRoundKeys(key);
+    }
 
-        for (int i = 0; i < 8; i++)
-        {
-            _roundKeys[i] = BinaryPrimitives.ReadUInt32LittleEndian(key.Slice(i * 4, 4));
-        }
+    public BelTBlock()
+    {
+        _roundKeys = new uint[8];
     }
 
     public void Encrypt(ReadOnlySpan<byte> input, Span<byte> output)
@@ -149,5 +149,20 @@ public sealed class BelTBlock
     {
         int index = (7 * (step - 1) + j - 1) % 8;
         return _roundKeys[index];
+    }
+
+    internal void ResetKey(ReadOnlySpan<byte> newKey)
+    {
+        this.GenerateRoundKeys(newKey);
+    }
+
+    private void GenerateRoundKeys(ReadOnlySpan<byte> key)
+    {
+        if (key.Length != 32) throw new ArgumentException("Key must be 256 bits.");
+
+        for (int i = 0; i < 8; i++)
+        {
+            _roundKeys[i] = BinaryPrimitives.ReadUInt32LittleEndian(key.Slice(i * 4, 4));
+        }
     }
 }

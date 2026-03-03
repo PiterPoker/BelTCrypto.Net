@@ -7,4 +7,5 @@ public static class BeltHash
     public static BelTBlock BelTBlock(ReadOnlySpan<byte> key) => new(key);
     public static BelTWideBlock BelTWideBlock(BelTBlock block) => new(block);
     public static BelTKeyWrap BelTKeyWrap(BelTWideBlock wideBlock) => new(wideBlock);
+    public static BelTCompress BelTCompress(BelTBlock block) => new(block);
 }
