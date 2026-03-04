@@ -33,17 +33,17 @@ internal static class BelTMath
     ];
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte SubstituteH(byte b) => SBoxH[b];
+    internal static byte SubstituteH(byte b) => SBoxH[b];
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static uint RotHi(uint value, int bits)
+    internal static uint RotHi(uint value, int bits)
         => (value << bits) | (value >> (32 - bits));
 
     /// <summary>
     /// Преобразование G_r (r = 5, 13, 21)
     // G_r(u) = RotHi^r(H(u1) || H(u2) || H(u3) || H(u4)) 
     /// </summary>
-    public static uint G(uint u, int r)
+    internal static uint G(uint u, int r)
     {
         uint substituted =
             ((uint)SubstituteH((byte)(u >> 24)) << 24) |

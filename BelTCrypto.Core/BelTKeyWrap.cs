@@ -1,10 +1,11 @@
-﻿using System.Security.Cryptography;
+﻿using BelTCrypto.Core.Interfaces;
+using System.Security.Cryptography;
 
 namespace BelTCrypto.Core;
 
-public sealed class BelTKeyWrap(BelTWideBlock wideBlock)
+public sealed class BelTKeyWrap(IBelTWideBlock wideBlock)
 {
-    private readonly BelTWideBlock _wideBlock = wideBlock;
+    private readonly IBelTWideBlock _wideBlock = wideBlock;
 
     public void Wrap(ReadOnlySpan<byte> input, Span<byte> output)
     {

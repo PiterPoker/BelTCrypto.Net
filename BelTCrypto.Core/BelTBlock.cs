@@ -1,10 +1,14 @@
-﻿using System.Buffers.Binary;
+﻿using BelTCrypto.Core.Interfaces;
+using System.Buffers.Binary;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
 namespace BelTCrypto.Core;
 
-public sealed class BelTBlock
+internal sealed class BelTBlock : IBelTBlock
 {
-    private readonly uint[] _roundKeys;
+    private readonly uint[] _roundKeys; 
+    private bool _disposed;
 
     public BelTBlock(ReadOnlySpan<byte> key)
         : this()
@@ -20,7 +24,7 @@ public sealed class BelTBlock
     public void Encrypt(ReadOnlySpan<byte> input, Span<byte> output)
     {
         // 1. Разбиение на слова a, b, c, d (X1, X2, X3, X4) - Little Endian
-        uint a = BinaryPrimitives.ReadUInt32LittleEndian(input.Slice(0, 4));
+        uint a = BinaryPrimitives.ReadUInt32LittleEndian(input[..4]);
         uint b = BinaryPrimitives.ReadUInt32LittleEndian(input.Slice(4, 4));
         uint c = BinaryPrimitives.ReadUInt32LittleEndian(input.Slice(8, 4));
         uint d = BinaryPrimitives.ReadUInt32LittleEndian(input.Slice(12, 4));
@@ -74,7 +78,7 @@ public sealed class BelTBlock
         // Финальная сборка Y. По таблице А.2 для i=8:
         // a=D66BC3E0, b=69CCA1C9, c=FA88FA6E, d=3557C9E3
         // Y должен быть: 69CCA1C9 3557C9E3 D66BC3E0 FA88FA6E
-        BinaryPrimitives.WriteUInt32LittleEndian(output.Slice(0, 4), b);
+        BinaryPrimitives.WriteUInt32LittleEndian(output[..4], b);
         BinaryPrimitives.WriteUInt32LittleEndian(output.Slice(4, 4), d);
         BinaryPrimitives.WriteUInt32LittleEndian(output.Slice(8, 4), a);
         BinaryPrimitives.WriteUInt32LittleEndian(output.Slice(12, 4), c);
@@ -85,7 +89,7 @@ public sealed class BelTBlock
         // 1. Разбиение входного шифртекста Y на слова (b, d, a, c)
         // ВНИМАНИЕ: При шифровании мы записывали в output (b, d, a, c). 
         // Значит при чтении для расшифрования:
-        uint b = BinaryPrimitives.ReadUInt32LittleEndian(input.Slice(0, 4));
+        uint b = BinaryPrimitives.ReadUInt32LittleEndian(input[..4]);
         uint d = BinaryPrimitives.ReadUInt32LittleEndian(input.Slice(4, 4));
         uint a = BinaryPrimitives.ReadUInt32LittleEndian(input.Slice(8, 4));
         uint c = BinaryPrimitives.ReadUInt32LittleEndian(input.Slice(12, 4));
@@ -138,7 +142,7 @@ public sealed class BelTBlock
         }
 
         // 3. Сборка результата X = (a, b, c, d)
-        BinaryPrimitives.WriteUInt32LittleEndian(output.Slice(0, 4), a);
+        BinaryPrimitives.WriteUInt32LittleEndian(output[..4], a);
         BinaryPrimitives.WriteUInt32LittleEndian(output.Slice(4, 4), b);
         BinaryPrimitives.WriteUInt32LittleEndian(output.Slice(8, 4), c);
         BinaryPrimitives.WriteUInt32LittleEndian(output.Slice(12, 4), d);
@@ -151,7 +155,7 @@ public sealed class BelTBlock
         return _roundKeys[index];
     }
 
-    internal void ResetKey(ReadOnlySpan<byte> newKey)
+    public void ResetKey(ReadOnlySpan<byte> newKey)
     {
         this.GenerateRoundKeys(newKey);
     }
@@ -164,5 +168,25 @@ public sealed class BelTBlock
         {
             _roundKeys[i] = BinaryPrimitives.ReadUInt32LittleEndian(key.Slice(i * 4, 4));
         }
+    }
+
+
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+
+        if (disposing)
+        {
+            var span = MemoryMarshal.AsBytes(_roundKeys.AsSpan());
+            CryptographicOperations.ZeroMemory(span);
+        }
+        _disposed = true;
     }
 }

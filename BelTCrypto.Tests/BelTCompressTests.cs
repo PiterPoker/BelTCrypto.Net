@@ -12,14 +12,16 @@ public class BelTCompressTests
         string expectedS = "46FE7425C9B181EB41DFEE3E72163D5A";
         string expectedY = "ED2F5481D593F40D87FCE37D6BC1A2E1B7D1A2CC975C82D3C0497488C90D99D8";
 
-        var engine = new BelTBlock();
+        var engine = BeltHash.BelTBlock();
         var beltCompress = BeltHash.BelTCompress(engine);
         var (S, Y) = beltCompress.Compress(x);
 
-        Assert.That(Convert.ToHexString(S), Is.EqualTo(expectedS));
-        Assert.That(Convert.ToHexString(Y), Is.EqualTo(expectedY));
+        Assert.Multiple(() =>
+        {
+            Assert.That(Convert.ToHexString(S), Is.EqualTo(expectedS));
+            Assert.That(Convert.ToHexString(Y), Is.EqualTo(expectedY));
+        });
     }
 
-    private static byte[] StringToByteArray(string hex) => Enumerable.Range(0, hex.Length / 2)
-        .Select(x => Convert.ToByte(hex.Substring(x * 2, 2), 16)).ToArray();
+    private static byte[] StringToByteArray(string hex) => [.. Enumerable.Range(0, hex.Length / 2).Select(x => Convert.ToByte(hex.Substring(x * 2, 2), 16))];
 }
