@@ -1,11 +1,15 @@
-﻿namespace BelTCrypto.Core;
+﻿using BelTCrypto.Core.Interfaces;
+
+namespace BelTCrypto.Core;
 
 public static class BeltHash
 {
     public static byte SubstituteH(byte b) => BelTMath.SubstituteH(b);
     public static uint RotHi(uint value, int bits) => BelTMath.RotHi(value, bits);
-    public static BelTBlock BelTBlock(ReadOnlySpan<byte> key) => new(key);
-    public static BelTWideBlock BelTWideBlock(BelTBlock block) => new(block);
-    public static BelTKeyWrap BelTKeyWrap(BelTWideBlock wideBlock) => new(wideBlock);
-    public static BelTCompress BelTCompress(BelTBlock block) => new(block);
+    public static IBelTBlock BelTBlock() => new BelTBlock();
+    public static IBelTBlock BelTBlock(ReadOnlySpan<byte> key) => new BelTBlock(key);
+    public static IBelTWideBlock BelTWideBlock(IBelTBlock block) => new BelTWideBlock(block);
+    public static BelTKeyWrap BelTKeyWrap(IBelTWideBlock wideBlock) => new(wideBlock);
+    public static IBelTCompress BelTCompress(IBelTBlock block) => new BelTCompress(block);
+    public static IBelTEcb BelTEcb(IBelTBlock block) => new BelTEcb(block);
 }

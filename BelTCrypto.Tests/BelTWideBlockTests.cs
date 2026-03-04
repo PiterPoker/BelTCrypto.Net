@@ -49,7 +49,7 @@ public class BelTWideBlockTests
 
         byte[] actualX = new byte[y.Length];
         var engine = BeltHash.BelTBlock(key);
-        var wideBlock = new BelTWideBlock(engine);
+        var wideBlock = BeltHash.BelTWideBlock(engine);
 
         wideBlock.Decrypt(y, actualX);
 
@@ -66,7 +66,7 @@ public class BelTWideBlockTests
 
         byte[] actualX = new byte[y.Length];
         var engine = BeltHash.BelTBlock(key);
-        var wideBlock = new BelTWideBlock(engine);
+        var wideBlock = BeltHash.BelTWideBlock(engine);
 
         wideBlock.Decrypt(y, actualX);
 

@@ -1,18 +1,19 @@
 ﻿using BelTCrypto.Core;
+using BelTCrypto.Core.Interfaces;
 using System.Security.Cryptography;
 
 namespace BelTCrypto.Net;
 
 public class BelTTransform : ICryptoTransform
 {
-    private readonly BelTWideBlock _wideBlock;
+    private readonly IBelTWideBlock _wideBlock;
     private readonly bool _encrypting;
     private bool _disposed;
 
     public BelTTransform(byte[] key, bool encrypting)
     {
-        var engine = new BelTBlock(key);
-        _wideBlock = new BelTWideBlock(engine);
+        var engine = BeltHash.BelTBlock(key);
+        _wideBlock = BeltHash.BelTWideBlock(engine);
         _encrypting = encrypting;
     }
 
@@ -49,9 +50,23 @@ public class BelTTransform : ICryptoTransform
     public bool CanTransformMultipleBlocks => true;
     public bool CanReuseTransform => true;
 
+
+
     public void Dispose() 
+    { 
+        Dispose(true); 
+        GC.SuppressFinalize(this); 
+    }
+
+    protected virtual void Dispose(bool disposing)
     {
-        _wideBlock?.Dispose();
-        _disposed = true;
+        if (_disposed) return; 
+        
+        if (disposing)
+        {
+            _wideBlock?.Dispose();
+        } 
+           
+        _disposed = true; 
     }
 }

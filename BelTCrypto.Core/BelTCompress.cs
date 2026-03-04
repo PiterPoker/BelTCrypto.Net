@@ -1,15 +1,18 @@
-﻿namespace BelTCrypto.Core;
+﻿using BelTCrypto.Core.Interfaces;
 
-public sealed class BelTCompress(BelTBlock block)
+namespace BelTCrypto.Core;
+
+internal sealed class BelTCompress(IBelTBlock block) : IBelTCompress
 {
-    private readonly BelTBlock _block = block ?? throw new ArgumentNullException(nameof(block));
+    private readonly IBelTBlock _block = block ?? throw new ArgumentNullException(nameof(block));
+    private bool _disposed;
     public (byte[] S, byte[] Y) Compress(ReadOnlySpan<byte> x)
     {
         if (x.Length != 64) // 512 бит = 64 байта
             throw new ArgumentException("Input X must be 512 bits (64 bytes).");
 
         // 1. (X1, X2, X3, X4) = Split(X, 128)
-        byte[] x1 = x.Slice(0, 16).ToArray();
+        byte[] x1 = x[..16].ToArray();
         byte[] x2 = x.Slice(16, 16).ToArray();
         byte[] x3 = x.Slice(32, 16).ToArray();
         byte[] x4 = x.Slice(48, 16).ToArray();
@@ -60,5 +63,24 @@ public sealed class BelTCompress(BelTBlock block)
         y2.CopyTo(y, 16);
 
         return (s, y);
+    }
+
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+
+        if (disposing)
+        {
+            _block?.Dispose();
+        }
+
+        _disposed = true;
     }
 }
