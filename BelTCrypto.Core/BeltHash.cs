@@ -12,4 +12,6 @@ public static class BeltHash
     public static BelTKeyWrap BelTKeyWrap(IBelTWideBlock wideBlock) => new(wideBlock);
     public static IBelTCompress BelTCompress(IBelTBlock block) => new BelTCompress(block);
     public static IBelTEcb BelTEcb(IBelTBlock block) => new BelTEcb(block);
+    public static IBelTCbcTransform BelTCbcEncryptTransform(IBelTBlock block, ReadOnlySpan<byte> iv) => new BelTCbcEncryptTransform(block, iv);
+    public static IBelTCbcTransform BelTCbcDecryptTransform(IBelTBlock block, ReadOnlySpan<byte> iv) => new BelTCbcDecryptTransform(block, iv);
 }
