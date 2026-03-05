@@ -2,5 +2,5 @@
 
 public interface IEncryptor
 {
-    void Encrypt(ReadOnlySpan<byte> input, Span<byte> output);
+    public void Encrypt(ReadOnlySpan<byte> input, Span<byte> output);
 }
