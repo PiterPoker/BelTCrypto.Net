@@ -33,9 +33,27 @@ public class BelTAlgorithm : SymmetricAlgorithm
             CipherMode.ECB => BeltHash.BelTEcbEncryptTransform(block),
             CipherMode.CBC => BeltHash.BelTCbcEncryptTransform(block, rgbIV ?? IV),
             CipherMode.CFB => BeltHash.BelTCfbEncryptTransform(block, rgbIV ?? IV),
+            BelTModes.CTR => BeltHash.BelTCtrTransform(block, rgbIV ?? IV),
             // Сюда потом добавим CTR, CFB и т.д.
             _ => throw new CryptographicException($"Режим {Mode} не поддерживается для BelT")
         };
+    }
+
+    public override CipherMode Mode
+    {
+        get => ModeValue;
+        set
+        {
+            if (!(value == CipherMode.CBC ||
+                  value == CipherMode.ECB ||
+                  value == CipherMode.CFB ||
+                  value == BelTModes.CTR)) 
+            {
+                throw new CryptographicException("Указанный режим шифрования не поддерживается для BelT");
+            }
+
+            ModeValue = value;
+        }
     }
 
     public override ICryptoTransform CreateDecryptor(byte[] rgbKey, byte[]? rgbIV)
@@ -47,10 +65,10 @@ public class BelTAlgorithm : SymmetricAlgorithm
             CipherMode.ECB => BeltHash.BelTEcbDecryptTransform(block),
             CipherMode.CBC => BeltHash.BelTCbcDecryptTransform(block, rgbIV ?? IV),
             CipherMode.CFB => BeltHash.BelTCfbDecryptTransform(block, rgbIV ?? IV),
+            BelTModes.CTR => BeltHash.BelTCtrTransform(block, rgbIV ?? IV),
             _ => throw new CryptographicException($"Режим {Mode} не поддерживается для BelT")
         };
     }
-
 
     // Эти методы обязательны для реализации абстрактного класса
     public override void GenerateKey()
