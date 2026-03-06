@@ -32,6 +32,7 @@ public class BelTAlgorithm : SymmetricAlgorithm
         {
             CipherMode.ECB => BeltHash.BelTEcbEncryptTransform(block),
             CipherMode.CBC => BeltHash.BelTCbcEncryptTransform(block, rgbIV ?? IV),
+            CipherMode.CFB => BeltHash.BelTCfbEncryptTransform(block, rgbIV ?? IV),
             // Сюда потом добавим CTR, CFB и т.д.
             _ => throw new CryptographicException($"Режим {Mode} не поддерживается для BelT")
         };
@@ -45,6 +46,7 @@ public class BelTAlgorithm : SymmetricAlgorithm
         {
             CipherMode.ECB => BeltHash.BelTEcbDecryptTransform(block),
             CipherMode.CBC => BeltHash.BelTCbcDecryptTransform(block, rgbIV ?? IV),
+            CipherMode.CFB => BeltHash.BelTCfbDecryptTransform(block, rgbIV ?? IV),
             _ => throw new CryptographicException($"Режим {Mode} не поддерживается для BelT")
         };
     }
