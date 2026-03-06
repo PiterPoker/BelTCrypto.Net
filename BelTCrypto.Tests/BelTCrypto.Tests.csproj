@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BelTCrypto.Core\BelTCrypto.Core.csproj" />
+    <ProjectReference Include="..\BelTCrypto.Net\BelTCrypto.Net.csproj" />
   </ItemGroup>
 
 </Project>
