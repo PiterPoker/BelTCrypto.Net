@@ -13,7 +13,7 @@ public sealed class BelTCbcAlgorithm : SymmetricAlgorithm
         _blockFactory = blockFactory;
 
         // Настройки согласно СТБ 34.101.31
-        KeySizes[] supportedKeys = { new(128, 256, 64) }; // 128, 192, 256 бит
+        KeySizes[] supportedKeys = [new(128, 256, 64)]; // 128, 192, 256 бит
         KeySizeValue = 256;
         BlockSizeValue = 128;
         FeedbackSizeValue = 128;

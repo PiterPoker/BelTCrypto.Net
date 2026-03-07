@@ -17,12 +17,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="NUnit.Framework" />
+    <ProjectReference Include="..\BelTCrypto.Core\BelTCrypto.Core.csproj" />
+    <ProjectReference Include="..\BelTCrypto.Net\BelTCrypto.Net.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BelTCrypto.Core\BelTCrypto.Core.csproj" />
-    <ProjectReference Include="..\BelTCrypto.Net\BelTCrypto.Net.csproj" />
+    <Using Include="NUnit.Framework" />
   </ItemGroup>
 
 </Project>
