@@ -13,7 +13,7 @@ internal sealed class BelTEcbDecryptTransform(IBelTBlock block) : BelTEcbTransfo
         Array.Copy(_buffer, 0, finalY, 0, _bufferCount);
         Array.Copy(inputBuffer, inputOffset, finalY, _bufferCount, inputCount);
 
-        if (finalY.Length == 0) return Array.Empty<byte>();
+        if (finalY.Length == 0) return [];
 
         int totalLen = finalY.Length;
         int n = (totalLen + 15) / 16;

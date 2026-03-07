@@ -18,5 +18,6 @@ public static class BeltHash
     public static IBelTCbcTransform BelTCbcDecryptTransform(IBelTBlock block, ReadOnlySpan<byte> iv) => new BelTCbcDecryptTransform(block, iv); 
     public static IBelTCfbTransform BelTCfbEncryptTransform(IBelTBlock block, ReadOnlySpan<byte> iv) => new BelTCfbEncryptTransform(block, iv);
     public static IBelTCfbTransform BelTCfbDecryptTransform(IBelTBlock block, ReadOnlySpan<byte> iv) => new BelTCfbDecryptTransform(block, iv);
-    public static ICryptoTransform BelTCtrTransform(IBelTBlock block, ReadOnlySpan<byte> iv) => new BelTCtrTransform(block, iv);
+    public static IBelTCrtTransform BelTCtrTransform(IBelTBlock block, ReadOnlySpan<byte> iv) => new BelTCtrTransform(block, iv);
+    public static IBelTMac BelTMac(IBelTBlock block) => new BelTMac(block);
 }

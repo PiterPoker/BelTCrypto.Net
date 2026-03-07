@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Buffers.Binary;
+using System.Runtime.CompilerServices;
 
 namespace BelTCrypto.Core;
 
@@ -52,5 +53,39 @@ internal static class BelTMath
             (uint)SubstituteH((byte)u);
 
         return RotHi(substituted, r);
+    }
+
+    internal static void ApplyPhi1(ReadOnlySpan<byte> u, Span<byte> result)
+    {
+        uint u1 = BinaryPrimitives.ReadUInt32LittleEndian(u[..4]);
+        uint u2 = BinaryPrimitives.ReadUInt32LittleEndian(u.Slice(4, 4));
+        uint u3 = BinaryPrimitives.ReadUInt32LittleEndian(u.Slice(8, 4));
+        uint u4 = BinaryPrimitives.ReadUInt32LittleEndian(u.Slice(12, 4));
+
+        BinaryPrimitives.WriteUInt32LittleEndian(result[..4], u2);
+        BinaryPrimitives.WriteUInt32LittleEndian(result.Slice(4, 4), u3);
+        BinaryPrimitives.WriteUInt32LittleEndian(result.Slice(8, 4), u4);
+        BinaryPrimitives.WriteUInt32LittleEndian(result.Slice(12, 4), u1 ^ u2);
+    }
+    internal static void ApplyPhi2(ReadOnlySpan<byte> u, Span<byte> result)
+    {
+        uint u1 = BinaryPrimitives.ReadUInt32LittleEndian(u[0..4]);
+        uint u2 = BinaryPrimitives.ReadUInt32LittleEndian(u[4..8]);
+        uint u3 = BinaryPrimitives.ReadUInt32LittleEndian(u[8..12]);
+        uint u4 = BinaryPrimitives.ReadUInt32LittleEndian(u[12..16]);
+
+        BinaryPrimitives.WriteUInt32LittleEndian(result[0..4], u1 ^ u4);
+        BinaryPrimitives.WriteUInt32LittleEndian(result[4..8], u1);
+        BinaryPrimitives.WriteUInt32LittleEndian(result[8..12], u2);
+        BinaryPrimitives.WriteUInt32LittleEndian(result[12..16], u3);
+    }
+
+    internal static void ApplyPsi(ReadOnlySpan<byte> partial, Span<byte> result)
+    {
+        result.Clear();
+        partial.CopyTo(result);
+        // Дополнение "1" — это бит. В байте это 0x01 (младший бит) 
+        // или 0x80 (старший бит). В СТБ belt-mac это именно байт 0x01.
+        result[partial.Length] = 0x80;
     }
 }

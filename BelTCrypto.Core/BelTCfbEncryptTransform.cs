@@ -9,20 +9,23 @@ internal sealed class BelTCfbEncryptTransform(IBelTBlock block, ReadOnlySpan<byt
     public override int TransformBlock(byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)
     {
         int processed = 0;
+        Span<byte> gamma = stackalloc byte[16];
+
         while (processed < inputCount)
         {
-            // 1. Генерируем гамму: Encrypt(Yi-1)
-            Span<byte> gamma = stackalloc byte[16];
             _block.Encrypt(_register, gamma);
 
-            // 2. XOR: Yi = Xi ^ Gamma
+            // Работаем со слайсами для чистоты кода
+            ReadOnlySpan<byte> input = inputBuffer.AsSpan(inputOffset + processed, 16);
+            Span<byte> output = outputBuffer.AsSpan(outputOffset + processed, 16);
+
             for (int j = 0; j < 16; j++)
             {
-                outputBuffer[outputOffset + processed + j] = (byte)(inputBuffer[inputOffset + processed + j] ^ gamma[j]);
+                output[j] = (byte)(input[j] ^ gamma[j]);
             }
 
-            // 3. Обновляем регистр: Yi-1 = Yi
-            Array.Copy(outputBuffer, outputOffset + processed, _register, 0, 16);
+            // Обновляем регистр напрямую из output
+            output.CopyTo(_register);
 
             processed += 16;
         }
@@ -34,10 +37,14 @@ internal sealed class BelTCfbEncryptTransform(IBelTBlock block, ReadOnlySpan<byt
         byte[] output = new byte[inputCount];
         int processed = 0;
 
-        // Цикл по всем полным блокам, если они есть
+        // 1. Выносим выделение памяти из цикла.
+        // Теперь, сколько бы блоков ни было, мы используем одни и те же 16 байт в стеке.
+        Span<byte> gamma = stackalloc byte[16];
+
+        // Цикл по всем полным блокам
         while (processed + 16 <= inputCount)
         {
-            Span<byte> gamma = stackalloc byte[16];
+            // Используем заранее выделенный буфер
             _block.Encrypt(_register, gamma);
 
             for (int j = 0; j < 16; j++)
@@ -45,22 +52,28 @@ internal sealed class BelTCfbEncryptTransform(IBelTBlock block, ReadOnlySpan<byt
                 output[processed + j] = (byte)(inputBuffer[inputOffset + processed + j] ^ gamma[j]);
             }
 
-            // Обновляем регистр текущим результатом (Yi)
-            Array.Copy(output, processed, _register, 0, 16);
+            // В шифровании CFB регистр обновляется ВЫХОДОМ (шифртекстом Yi)
+            // Используем Span для быстрого копирования
+            output.AsSpan(processed, 16).CopyTo(_register);
+
             processed += 16;
         }
 
-        // Обработка последнего неполного блока (хвоста)
+        // 2. Обработка последнего неполного блока (хвоста)
         if (processed < inputCount)
         {
             int remaining = inputCount - processed;
-            Span<byte> gamma = stackalloc byte[16];
+
+            // Используем тот же самый буфер gamma
             _block.Encrypt(_register, gamma);
 
             for (int j = 0; j < remaining; j++)
             {
                 output[processed + j] = (byte)(inputBuffer[inputOffset + processed + j] ^ gamma[j]);
             }
+
+            // Для неполного блока в режиме CFB (согласно СТБ) регистр 
+            // обычно не обновляется, так как цепочка прерывается.
         }
 
         return output;
