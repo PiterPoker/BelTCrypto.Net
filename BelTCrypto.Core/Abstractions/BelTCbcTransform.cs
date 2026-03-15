@@ -1,17 +1,18 @@
 ﻿using BelTCrypto.Core.Interfaces;
+using BelTCrypto.Core.Interfaces.Old;
 using System.Security.Cryptography;
 
 namespace BelTCrypto.Core.Abstractions;
 
 internal abstract class BelTCbcTransform : IBelTCbcTransform
 {
-    protected readonly IBelTBlock _block;
+    protected readonly IBelTBlockOld _block;
     protected readonly byte[] _prevY;
     protected readonly byte[] _buffer;
     protected int _bufferCount;
     protected bool _isDisposed;
 
-    protected BelTCbcTransform(IBelTBlock block, ReadOnlySpan<byte> s)
+    protected BelTCbcTransform(IBelTBlockOld block, ReadOnlySpan<byte> s)
     {
         _block = block ?? throw new ArgumentNullException(nameof(block));
         _prevY = s.ToArray();

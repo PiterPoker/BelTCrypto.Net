@@ -1,12 +1,12 @@
 ﻿using BelTCrypto.Core.Abstractions;
-using BelTCrypto.Core.Interfaces;
+using BelTCrypto.Core.Interfaces.Old;
 using System.Security.Cryptography;
 
 namespace BelTCrypto.Core;
 
 internal sealed class BelTCbcDecryptTransform : BelTCbcTransform
 {
-    public BelTCbcDecryptTransform(IBelTBlock block, ReadOnlySpan<byte> s)
+    public BelTCbcDecryptTransform(IBelTBlockOld block, ReadOnlySpan<byte> s)
         : base(block, s)
     {
     }

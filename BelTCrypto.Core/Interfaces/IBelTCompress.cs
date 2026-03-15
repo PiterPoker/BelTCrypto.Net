@@ -1,5 +1,5 @@
 ﻿namespace BelTCrypto.Core.Interfaces;
 
-public interface IBelTCompress : ICompressor, IDisposable
+public interface IBelTCompress : ICompressor
 {
 }

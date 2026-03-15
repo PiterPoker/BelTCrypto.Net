@@ -1,27 +1,50 @@
 ﻿using BelTCrypto.Core;
+using BelTCrypto.Core.Factories;
+using BelTCrypto.Core.Interfaces;
 
 namespace BelTCrypto.Tests;
 
 [TestFixture]
-public class BelTCompressTests
+internal class BelTCompressTests
 {
-    [Test]
-    public void Compress_StandardVector_ReturnsCorrectResult()
-    {
-        byte[] x = StringToByteArray("B194BAC80A08F53B366D008E584A5DE48504FA9D1BB6C7AC252E72C202FDCE0D5BE3D61217B96181FE6786AD716B890B5CB0C0FF33C356B835C405AED8E07F99");
-        string expectedS = "46FE7425C9B181EB41DFEE3E72163D5A";
-        string expectedY = "ED2F5481D593F40D87FCE37D6BC1A2E1B7D1A2CC975C82D3C0497488C90D99D8";
+    private IBelTCompress _compressor;
 
-        var engine = BeltHash.BelTBlock();
-        var beltCompress = BeltHash.BelTCompress(engine);
-        var (S, Y) = beltCompress.Compress(x);
+    [SetUp]
+    public void Setup()
+    {
+        _compressor = BelTCompressorFactory.Create();
+    }
+
+    [Test]
+    public void Compress_ReturnsExpectedValues()
+    {
+        var x = BelTMath.H[..64];
+
+        var expectedS = new byte[] {
+            0x46, 0xFE, 0x74, 0x25, 0xC9, 0xB1, 0x81, 0xEB,
+            0x41, 0xDF, 0xEE, 0x3E, 0x72, 0x16, 0x3D, 0x5A
+        };
+        var expectedY = new byte[] {
+            0xED, 0x2F, 0x54, 0x81, 0xD5, 0x93, 0xF4, 0x0D,
+            0x87, 0xFC, 0xE3, 0x7D, 0x6B, 0xC1, 0xA2, 0xE1,
+            0xB7, 0xD1, 0xA2, 0xCC, 0x97, 0x5C, 0x82, 0xD3,
+            0xC0, 0x49, 0x74, 0x88, 0xC9, 0x0D, 0x99, 0xD8
+        };
+
+        byte[] actualS = new byte[16];
+        byte[] actualY = new byte[32];
+
+        _compressor.Compress(x, actualS, actualY);
+
+        TestContext.Out.WriteLine($"Encrypt S: {BitConverter.ToString(actualS)}");
+        TestContext.Out.WriteLine($"Expected S:  {BitConverter.ToString(expectedS)}");
+        TestContext.Out.WriteLine($"Encrypt Y: {BitConverter.ToString(actualY)}");
+        TestContext.Out.WriteLine($"Expected Y:  {BitConverter.ToString(expectedY)}");
 
         Assert.Multiple(() =>
         {
-            Assert.That(Convert.ToHexString(S), Is.EqualTo(expectedS));
-            Assert.That(Convert.ToHexString(Y), Is.EqualTo(expectedY));
+            Assert.That(actualS, Is.EqualTo(expectedS), "S не совпадает.");
+            Assert.That(actualY, Is.EqualTo(expectedY), "Y не совпадает.");
         });
     }
-
-    private static byte[] StringToByteArray(string hex) => [.. Enumerable.Range(0, hex.Length / 2).Select(x => Convert.ToByte(hex.Substring(x * 2, 2), 16))];
 }

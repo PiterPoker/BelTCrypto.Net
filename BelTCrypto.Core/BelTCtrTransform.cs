@@ -1,15 +1,16 @@
 ﻿using BelTCrypto.Core.Interfaces;
+using BelTCrypto.Core.Interfaces.Old;
 using System.Security.Cryptography;
 
 namespace BelTCrypto.Core;
 
 internal sealed class BelTCtrTransform : IBelTCrtTransform
 {
-    private readonly IBelTBlock _block;
+    private readonly IBelTBlockOld _block;
     private readonly byte[] _s = new byte[16]; // Регистр счетчика s
     private bool _isDisposed;
 
-    public BelTCtrTransform(IBelTBlock block, ReadOnlySpan<byte> iv)
+    public BelTCtrTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv)
     {
         _block = block ?? throw new ArgumentNullException(nameof(block));
         if (iv.Length != 16) throw new ArgumentException("S (IV) must be 128 bits");

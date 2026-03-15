@@ -1,11 +1,12 @@
 ﻿using BelTCrypto.Core.Interfaces;
+using BelTCrypto.Core.Interfaces.Old;
 using System.Security.Cryptography;
 
 namespace BelTCrypto.Core.Abstractions;
 
-internal abstract class BelTEcbTransform(IBelTBlock block) : IBelTEcbTransform
+internal abstract class BelTEcbTransform(IBelTBlockOld block) : IBelTEcbTransform
 {
-    protected readonly IBelTBlock _block = block ?? throw new ArgumentNullException(nameof(block));
+    protected readonly IBelTBlockOld _block = block ?? throw new ArgumentNullException(nameof(block));
     protected readonly byte[] _buffer = new byte[16];
     protected int _bufferCount = 0;
     protected bool _isDisposed;

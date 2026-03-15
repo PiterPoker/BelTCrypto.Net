@@ -1,4 +1,6 @@
 ﻿using BelTCrypto.Core.Interfaces;
+using BelTCrypto.Core.Interfaces.Old;
+using BelTCrypto.Core.Old;
 using System.Buffers.Binary;
 using System.Security.Cryptography;
 
@@ -6,12 +8,12 @@ namespace BelTCrypto.Core;
 
 internal class BelTMac : IBelTMac
 {
-    private readonly IBelTBlock _block;
+    private readonly IBelTBlockOld _block;
     private readonly byte[] _r = new byte[16];
     private readonly byte[] _s = new byte[16];
     private bool _isDisposed;
 
-    public BelTMac(IBelTBlock block)
+    public BelTMac(IBelTBlockOld block)
     {
         _block = block;
         // Шаг 2: r = belt-block(0^128, K)
@@ -37,13 +39,13 @@ internal class BelTMac : IBelTMac
 
         if (length == 16)
         {
-            BelTMath.ApplyPhi1(_r, phiRes);
+            BelTMathOld.ApplyPhi1(_r, phiRes);
             lastChunk.CopyTo(xn);
         }
         else
         {
-            BelTMath.ApplyPhi2(_r, phiRes);
-            BelTMath.ApplyPsi(lastChunk[..length], xn);
+            BelTMathOld.ApplyPhi2(_r, phiRes);
+            BelTMathOld.ApplyPsi(lastChunk[..length], xn);
         }
 
         // Создаем ЛОКАЛЬНЫЙ массив для входа в последнее шифрование

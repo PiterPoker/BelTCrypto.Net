@@ -1,10 +1,10 @@
-﻿using BelTCrypto.Core.Interfaces;
+﻿using BelTCrypto.Core.Interfaces.Old;
 
-namespace BelTCrypto.Core;
+namespace BelTCrypto.Core.Old;
 
-internal sealed class BelTCompress(IBelTBlock block) : IBelTCompress
+internal sealed class BelTCompressOld(IBelTBlockOld block) : IBelTCompressOld
 {
-    private readonly IBelTBlock _block = block ?? throw new ArgumentNullException(nameof(block));
+    private readonly IBelTBlockOld _block = block ?? throw new ArgumentNullException(nameof(block));
     private bool _disposed;
     public (byte[] S, byte[] Y) Compress(ReadOnlySpan<byte> x)
     {

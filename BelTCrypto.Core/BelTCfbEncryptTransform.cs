@@ -1,9 +1,9 @@
 ﻿using BelTCrypto.Core.Abstractions;
-using BelTCrypto.Core.Interfaces;
+using BelTCrypto.Core.Interfaces.Old;
 
 namespace BelTCrypto.Core;
 
-internal sealed class BelTCfbEncryptTransform(IBelTBlock block, ReadOnlySpan<byte> iv)
+internal sealed class BelTCfbEncryptTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv)
     : BelTCfbTransform(block, iv)
 {
     public override int TransformBlock(byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)

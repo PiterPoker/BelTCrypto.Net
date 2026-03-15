@@ -1,12 +1,157 @@
-﻿using System.Buffers.Binary;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 
 namespace BelTCrypto.Core;
 
-internal static class BelTMath
+/// <summary>
+/// Математические операции над 32-битными словами согласно СТБ 34.101.31-2020.
+/// </summary>
+public static class BelTMath
 {
-    // Таблица 2 из СТБ 34.101.31-2020    
-    private static readonly byte[] SBoxH =
+    public static class GfBlock
+    {
+        public static void Multiply(Span<byte> t, ReadOnlySpan<byte> r)
+        {
+            Span<byte> res = stackalloc byte[16];
+            res.Clear();
+            Span<byte> v = stackalloc byte[16];
+            t.CopyTo(v);
+
+            for (int i = 0; i < 128; i++)
+            {
+                int bit = (r[i >> 3] >> (i & 7)) & 1;
+
+                byte mask = (byte)(-(sbyte)bit);
+
+                for (int j = 0; j < 16; j++)
+                    res[j] ^= (byte)(v[j] & mask);
+
+                byte carry = (byte)(v[15] >> 7);
+                ShiftLeftStb(v);
+
+                byte polyMask = (byte)(-(sbyte)carry);
+                v[0] ^= (byte)(0x87 & polyMask);
+            }
+            res.CopyTo(t);
+        }
+
+        private static void ShiftLeftStb(Span<byte> data)
+        {
+            byte carry = 0;
+            for (int i = 0; i < 16; i++)
+            {
+                byte nextCarry = (byte)(data[i] >> 7);
+                data[i] = (byte)((data[i] << 1) | carry);
+                carry = nextCarry;
+            }
+        }
+
+        private static bool GetBitStb(ReadOnlySpan<byte> data, int i)
+        {
+            return (data[i / 8] & (1 << (i % 8))) != 0;
+        }
+
+        public static void Xor(Span<byte> target, ReadOnlySpan<byte> source)
+        {
+            for (int i = 0; i < 16; i++) target[i] ^= source[i];
+        }
+    }
+
+    /// <summary>
+    /// Для работы с 128/256 битными данными
+    /// </summary>
+    public static class Block
+    {
+        // Инкремент тоже лучше делать без ветвлений, если он работает с секретными IV
+        public static void Increment(Span<byte> s)
+        {
+            int carry = 1;
+            for (int i = 0; i < 16; i++)
+            {
+                int sum = s[i] + carry;
+                s[i] = (byte)sum;
+                carry = sum >> 8;
+            }
+        }
+        /// <summary>
+        /// Универсальный циклический сдвиг влево для блоков любой длины (кратный 8 битам)
+        /// Используется для RotHi^128 и RotHi^256
+        /// </summary>
+        public static void RotHi(ReadOnlySpan<byte> input, Span<byte> output, int bits)
+        {
+            if (bits % 8 != 0) throw new ArgumentException("Сдвиг должен быть кратен 8 битам");
+
+            int offset = bits / 8 % input.Length;
+            if (offset == 0)
+            {
+                input.CopyTo(output);
+                return;
+            }
+
+            // Копируем часть со смещением в начало, а "вылетевшую" часть в конец
+            input[offset..].CopyTo(output);
+            input[..offset].CopyTo(output[(input.Length - offset)..]);
+        }
+
+        /// <summary>
+        /// Логический сдвиг вправо (ShLo)
+        /// </summary>
+        public static void ShLo(ReadOnlySpan<byte> input, Span<byte> output, int bits)
+        {
+            int byteShift = bits / 8;
+            output.Clear();
+            if (byteShift < input.Length)
+            {
+                input[byteShift..].CopyTo(output);
+            }
+        }
+
+        /// <summary>
+        /// Логический сдвиг влево (ShHi)
+        /// </summary>
+        public static void ShHi(ReadOnlySpan<byte> input, Span<byte> output, int bits)
+        {
+            int byteShift = bits / 8;
+            output.Clear();
+            if (byteShift < input.Length)
+            {
+                input[..^byteShift].CopyTo(output[byteShift..]);
+            }
+        }
+    }
+    /// <summary>
+    /// Для работы с 32 битными данными
+    /// </summary>
+    public static class Word
+    {
+        /// <summary>
+        /// Сдвиг в сторону старших разрядов (влево в регистре).
+        /// Соответствует ShHi в стандарте.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ShHi(uint x, int n) => x << n;
+
+        /// <summary>
+        /// Сдвиг в сторону младших разрядов (вправо в регистре).
+        /// Соответствует ShLo в стандарте.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ShLo(uint x, int n) => x >> n;
+
+        /// <summary>
+        /// Циклический сдвиг в сторону старших разрядов (влево в регистре).
+        /// Соответствует RotHi в стандарте.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint RotHi(uint x, int n) => (x << n) | (x >> (32 - n));
+
+    }
+
+    public static readonly byte[] C = [
+        0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    ];
+
+    public static readonly byte[] H =
     [
         0xB1, 0x94, 0xBA, 0xC8, 0x0A, 0x08, 0xF5, 0x3B, 0x36, 0x6D, 0x00, 0x8E, 0x58, 0x4A, 0x5D, 0xE4,
         0x85, 0x04, 0xFA, 0x9D, 0x1B, 0xB6, 0xC7, 0xAC, 0x25, 0x2E, 0x72, 0xC2, 0x02, 0xFD, 0xCE, 0x0D,
@@ -26,66 +171,21 @@ internal static class BelTMath
         0xD4, 0xEF, 0xD9, 0xB4, 0x3A, 0x62, 0x28, 0x75, 0x91, 0x14, 0x10, 0xEA, 0x77, 0x6C, 0xDA, 0x1D
     ];
 
-    // Константа синхропосылки по СТБ 34.101.31
-    internal static readonly byte[] SyncHeader =
-    [
-        0xA1, 0xA1, 0xA1, 0xA1, 0xA1, 0xA1, 0xA1, 0xA1,
-        0xA1, 0xA1, 0xA1, 0xA1, 0xA1, 0xA1, 0xA1, 0xA1
-    ];
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static byte SubstituteH(byte b) => SBoxH[b];
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static uint RotHi(uint value, int bits)
-        => (value << bits) | (value >> (32 - bits));
-
     /// <summary>
-    /// Преобразование G_r (r = 5, 13, 21)
-    // G_r(u) = RotHi^r(H(u1) || H(u2) || H(u3) || H(u4)) 
+    /// Базовая функция преобразования слова G_r(u).
     /// </summary>
-    internal static uint G(uint u, int r)
+    public static uint G(uint u, int r)
     {
-        uint substituted =
-            ((uint)SubstituteH((byte)(u >> 24)) << 24) |
-            ((uint)SubstituteH((byte)(u >> 16)) << 16) |
-            ((uint)SubstituteH((byte)(u >> 8)) << 8) |
-            (uint)SubstituteH((byte)u);
+        // 1. Разбиение на октеты и замена по таблице H
+        // Конкатенация: H(u1) || H(u2) || H(u3) || H(u4)
+        uint substituted = (uint)H[u & 0xFF] |
+                          ((uint)H[(u >> 8) & 0xFF] << 8) |
+                          ((uint)H[(u >> 16) & 0xFF] << 16) |
+                          ((uint)H[(u >> 24) & 0xFF] << 24);
 
-        return RotHi(substituted, r);
-    }
-
-    internal static void ApplyPhi1(ReadOnlySpan<byte> u, Span<byte> result)
-    {
-        uint u1 = BinaryPrimitives.ReadUInt32LittleEndian(u[..4]);
-        uint u2 = BinaryPrimitives.ReadUInt32LittleEndian(u.Slice(4, 4));
-        uint u3 = BinaryPrimitives.ReadUInt32LittleEndian(u.Slice(8, 4));
-        uint u4 = BinaryPrimitives.ReadUInt32LittleEndian(u.Slice(12, 4));
-
-        BinaryPrimitives.WriteUInt32LittleEndian(result[..4], u2);
-        BinaryPrimitives.WriteUInt32LittleEndian(result.Slice(4, 4), u3);
-        BinaryPrimitives.WriteUInt32LittleEndian(result.Slice(8, 4), u4);
-        BinaryPrimitives.WriteUInt32LittleEndian(result.Slice(12, 4), u1 ^ u2);
-    }
-    internal static void ApplyPhi2(ReadOnlySpan<byte> u, Span<byte> result)
-    {
-        uint u1 = BinaryPrimitives.ReadUInt32LittleEndian(u[0..4]);
-        uint u2 = BinaryPrimitives.ReadUInt32LittleEndian(u[4..8]);
-        uint u3 = BinaryPrimitives.ReadUInt32LittleEndian(u[8..12]);
-        uint u4 = BinaryPrimitives.ReadUInt32LittleEndian(u[12..16]);
-
-        BinaryPrimitives.WriteUInt32LittleEndian(result[0..4], u1 ^ u4);
-        BinaryPrimitives.WriteUInt32LittleEndian(result[4..8], u1);
-        BinaryPrimitives.WriteUInt32LittleEndian(result[8..12], u2);
-        BinaryPrimitives.WriteUInt32LittleEndian(result[12..16], u3);
-    }
-
-    internal static void ApplyPsi(ReadOnlySpan<byte> partial, Span<byte> result)
-    {
-        result.Clear();
-        partial.CopyTo(result);
-        // Дополнение "1" — это бит. В байте это 0x01 (младший бит) 
-        // или 0x80 (старший бит). В СТБ belt-mac это именно байт 0x01.
-        result[partial.Length] = 0x80;
+        // 2. Циклический сдвиг RotHi^r
+        // Используем твой метод Word.RotHi
+        return Word.RotHi(substituted, r);
     }
 }
+

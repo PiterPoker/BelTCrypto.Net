@@ -1,5 +1,5 @@
 ﻿using BelTCrypto.Core;
-using BelTCrypto.Core.Interfaces;
+using BelTCrypto.Core.Interfaces.Old;
 using System.Security.Cryptography;
 
 namespace BelTCrypto.Tests;
@@ -8,7 +8,7 @@ namespace BelTCrypto.Tests;
 public class BelTCbcDecryptTests
 {
     // Вспомогательный метод для расшифрования через стандартные потоки
-    private byte[] DecryptThroughStream(IBelTBlock block, byte[] iv, byte[] ciphertext)
+    private byte[] DecryptThroughStream(IBelTBlockOld block, byte[] iv, byte[] ciphertext)
     {
         using var decryptor = BeltHash.BelTCbcDecryptTransform(block, iv);
         using var msInput = new MemoryStream(ciphertext);
@@ -54,7 +54,10 @@ public class BelTCbcDecryptTests
         var block = BeltHash.BelTBlock(key);
         byte[] actualX = DecryptThroughStream(block, s, y);
 
-        Assert.That(actualX.Length, Is.EqualTo(36), "Длина расшифрованного текста должна быть 36 байт.");
-        Assert.That(Convert.ToHexString(actualX), Is.EqualTo(expectedX), "Расшифрование в режиме CTS (36 байт) не совпало.");
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(actualX, Has.Length.EqualTo(36), "Длина расшифрованного текста должна быть 36 байт.");
+            Assert.That(Convert.ToHexString(actualX), Is.EqualTo(expectedX), "Расшифрование в режиме CTS (36 байт) не совпало.");
+        }
     }
 }

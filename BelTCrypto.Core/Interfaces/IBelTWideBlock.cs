@@ -1,5 +1,5 @@
 ﻿namespace BelTCrypto.Core.Interfaces;
 
-public interface IBelTWideBlock : IEncryptor, IDecryptor, IDisposable
+public interface IBelTWideBlock : IEncryptor, IDecryptor
 {
 }

@@ -1,14 +1,14 @@
 ﻿using BelTCrypto.Core;
-using BelTCrypto.Core.Interfaces;
+using BelTCrypto.Core.Interfaces.Old;
 using System.Security.Cryptography;
 
 namespace BelTCrypto.Net;
 
 public class BelTAlgorithm : SymmetricAlgorithm
 {
-    private readonly Func<byte[], IBelTBlock> _blockFactory;
+    private readonly Func<byte[], IBelTBlockOld> _blockFactory;
 
-    public BelTAlgorithm(Func<byte[], IBelTBlock> blockFactory)
+    public BelTAlgorithm(Func<byte[], IBelTBlockOld> blockFactory)
     {
         _blockFactory = blockFactory;
 
