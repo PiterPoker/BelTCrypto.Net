@@ -1,9 +1,8 @@
-﻿using BelTCrypto.Core.Abstractions;
-using BelTCrypto.Core.Interfaces.Old;
+﻿using BelTCrypto.Core.Interfaces.Old;
 
-namespace BelTCrypto.Core;
+namespace BelTCrypto.Core.Old;
 
-internal sealed class BelTEcbDecryptTransform(IBelTBlockOld block) : BelTEcbTransform(block)
+internal sealed class BelTEcbDecryptTransformOld(IBelTBlockOld block) : BelTEcbTransformOld(block)
 {
     protected override void ProcessBlock(ReadOnlySpan<byte> input, Span<byte> output) => _block.Decrypt(input, output);
 

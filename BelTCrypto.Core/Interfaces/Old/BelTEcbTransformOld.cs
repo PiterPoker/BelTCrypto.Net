@@ -1,10 +1,8 @@
-﻿using BelTCrypto.Core.Interfaces;
-using BelTCrypto.Core.Interfaces.Old;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 
-namespace BelTCrypto.Core.Abstractions;
+namespace BelTCrypto.Core.Interfaces.Old;
 
-internal abstract class BelTEcbTransform(IBelTBlockOld block) : IBelTEcbTransform
+internal abstract class BelTEcbTransformOld(IBelTBlockOld block) : IBelTEcbTransformOld
 {
     protected readonly IBelTBlockOld _block = block ?? throw new ArgumentNullException(nameof(block));
     protected readonly byte[] _buffer = new byte[16];
@@ -51,7 +49,7 @@ internal abstract class BelTEcbTransform(IBelTBlockOld block) : IBelTEcbTransfor
             return totalProcessed;
         }
 
-        throw new ObjectDisposedException(nameof(BelTEcbTransform));
+        throw new ObjectDisposedException(nameof(BelTEcbTransformOld));
     }
 
     public abstract byte[] TransformFinalBlock(byte[] inputBuffer, int inputOffset, int inputCount);
