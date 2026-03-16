@@ -3,6 +3,6 @@
 namespace BelTCrypto.Core.Interfaces.Old;
 
 [Obsolete]
-public interface IBelTEcbTransformOld : ICryptoTransform
+public interface IBelTCfbOldTransform : ICryptoTransform
 {
 }

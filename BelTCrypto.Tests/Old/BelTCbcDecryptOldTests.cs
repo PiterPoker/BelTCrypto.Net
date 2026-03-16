@@ -2,10 +2,10 @@
 using BelTCrypto.Core.Interfaces.Old;
 using System.Security.Cryptography;
 
-namespace BelTCrypto.Tests;
+namespace BelTCrypto.Tests.Old;
 
 [TestFixture]
-public class BelTCbcDecryptTests
+public class BelTCbcDecryptOldTests
 {
     // Вспомогательный метод для расшифрования через стандартные потоки
     private byte[] DecryptThroughStream(IBelTBlockOld block, byte[] iv, byte[] ciphertext)

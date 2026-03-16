@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 
 namespace BelTCrypto.Core.Old;
 
+[Obsolete]
 internal sealed class BelTEcbEncryptTransformOld(IBelTBlockOld block) : BelTEcbTransformOld(block)
 {
     protected override void ProcessBlock(ReadOnlySpan<byte> input, Span<byte> output) => _block.Encrypt(input, output);

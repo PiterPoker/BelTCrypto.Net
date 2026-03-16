@@ -2,6 +2,7 @@
 
 namespace BelTCrypto.Core.Old;
 
+[Obsolete]
 internal sealed class BelTCompressOld(IBelTBlockOld block) : IBelTCompressOld
 {
     private readonly IBelTBlockOld _block = block ?? throw new ArgumentNullException(nameof(block));

@@ -1,12 +1,12 @@
-﻿using BelTCrypto.Core.Abstractions;
-using BelTCrypto.Core.Interfaces.Old;
+﻿using BelTCrypto.Core.Interfaces.Old;
 using System.Security.Cryptography;
 
-namespace BelTCrypto.Core;
+namespace BelTCrypto.Core.Old;
 
-internal sealed class BelTCbcDecryptTransform : BelTCbcTransform
+[Obsolete("Этот класс устарел. Используйте BelTCbcEncryptTransform и BelTCbc вместо него.")]
+internal sealed class BelTCbcDecryptOldTransform : BelTCbcOldTransform
 {
-    public BelTCbcDecryptTransform(IBelTBlockOld block, ReadOnlySpan<byte> s)
+    public BelTCbcDecryptOldTransform(IBelTBlockOld block, ReadOnlySpan<byte> s)
         : base(block, s)
     {
     }

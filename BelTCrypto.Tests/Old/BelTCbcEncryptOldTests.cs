@@ -1,10 +1,10 @@
 ﻿using BelTCrypto.Core;
 using System.Security.Cryptography;
 
-namespace BelTCrypto.Tests;
+namespace BelTCrypto.Tests.Old;
 
 [TestFixture]
-public class BelTCbcEncryptTests
+public class BelTCbcEncryptOldTests
 {
     private static byte[] StringToByteArray(string hex)
     {

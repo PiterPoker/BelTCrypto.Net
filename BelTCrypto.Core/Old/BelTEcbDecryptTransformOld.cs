@@ -2,6 +2,7 @@
 
 namespace BelTCrypto.Core.Old;
 
+[Obsolete]
 internal sealed class BelTEcbDecryptTransformOld(IBelTBlockOld block) : BelTEcbTransformOld(block)
 {
     protected override void ProcessBlock(ReadOnlySpan<byte> input, Span<byte> output) => _block.Decrypt(input, output);

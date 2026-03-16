@@ -1,7 +1,9 @@
-﻿using System.Security.Cryptography;
+﻿using BelTCrypto.Core.Interfaces.Old;
+using System.Security.Cryptography;
 
-namespace BelTCrypto.Core.Interfaces.Old;
+namespace BelTCrypto.Core.Old;
 
+[Obsolete]
 internal abstract class BelTEcbTransformOld(IBelTBlockOld block) : IBelTEcbTransformOld
 {
     protected readonly IBelTBlockOld _block = block ?? throw new ArgumentNullException(nameof(block));

@@ -16,10 +16,10 @@ public static class BeltHash
     public static IBelTCompressOld BelTCompress(IBelTBlockOld block) => new BelTCompressOld(block);
     public static IBelTEcbTransformOld BelTEcbEncryptTransform(IBelTBlockOld block) => new BelTEcbEncryptTransformOld(block);
     public static IBelTEcbTransformOld BelTEcbDecryptTransform(IBelTBlockOld block) => new BelTEcbDecryptTransformOld(block);
-    public static IBelTCbcTransform BelTCbcEncryptTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv) => new BelTCbcEncryptTransform(block, iv);
-    public static IBelTCbcTransform BelTCbcDecryptTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv) => new BelTCbcDecryptTransform(block, iv); 
-    public static IBelTCfbTransform BelTCfbEncryptTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv) => new BelTCfbEncryptTransform(block, iv);
-    public static IBelTCfbTransform BelTCfbDecryptTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv) => new BelTCfbDecryptTransform(block, iv);
+    public static IBelTCbcOldTransform BelTCbcEncryptTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv) => new BelTCbcEncryptOldTransform(block, iv);
+    public static IBelTCbcOldTransform BelTCbcDecryptTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv) => new BelTCbcDecryptOldTransform(block, iv); 
+    public static IBelTCfbOldTransform BelTCfbEncryptTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv) => new BelTCfbEncryptOldTransform(block, iv);
+    public static IBelTCfbOldTransform BelTCfbDecryptTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv) => new BelTCfbDecryptOldTransform(block, iv);
     public static IBelTCrtTransform BelTCtrTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv) => new BelTCtrTransform(block, iv);
     public static IBelTMac BelTMac(IBelTBlockOld block) => new BelTMac(block);
 

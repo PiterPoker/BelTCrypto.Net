@@ -1,16 +1,16 @@
-﻿using BelTCrypto.Core.Interfaces;
-using BelTCrypto.Core.Interfaces.Old;
+﻿using BelTCrypto.Core.Interfaces.Old;
 using System.Security.Cryptography;
 
-namespace BelTCrypto.Core.Abstractions;
+namespace BelTCrypto.Core.Old;
 
-internal abstract class BelTCfbTransform : IBelTCfbTransform
+[Obsolete]
+internal abstract class BelTCfbOldTransform : IBelTCfbOldTransform
 {
     protected readonly IBelTBlockOld _block;
     protected readonly byte[] _register = new byte[16]; // Это наше Yi-1 (или S в начале)
     protected bool _isDisposed;
 
-    protected BelTCfbTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv)
+    protected BelTCfbOldTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv)
     {
         _block = block ?? throw new ArgumentNullException(nameof(block));
         if (iv.Length != 16) throw new ArgumentException("IV (S) must be 128 bits");
