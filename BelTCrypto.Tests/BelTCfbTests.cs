@@ -1,4 +1,5 @@
 ﻿using BelTCrypto.Core;
+using BelTCrypto.Core.Factories;
 using BelTCrypto.Core.Interfaces;
 
 namespace BelTCrypto.Tests;
@@ -7,13 +8,11 @@ namespace BelTCrypto.Tests;
 public class BelTCfbTests
 {
     private IBelTCfb _cfb;
-    private IBelTBlock _block;
 
     [SetUp]
     public void Setup()
     {
-        _block = new BelTBlock(); // Твоя реализация 6.1
-        _cfb = new BelTCfb(_block);
+        _cfb = BelTCfbFactory.Create();
     }
 
     [Test]

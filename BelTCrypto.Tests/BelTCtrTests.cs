@@ -1,57 +1,70 @@
 ﻿using BelTCrypto.Core;
-using BelTCrypto.Net;
-using System.Security.Cryptography;
+using BelTCrypto.Core.Interfaces;
 
 namespace BelTCrypto.Tests;
 
 [TestFixture]
 public class BelTCtrTests
 {
-    private const CipherMode CTR = (CipherMode)6;
+    private IBelTCtr _ctr;
+    private IBelTBlock _block;
 
-    [Test]
-    public void Encrypt_Ctr_TableA15_ReturnsCorrectResult()
+    [SetUp]
+    public void Setup()
     {
-        // K = E9DEE72C...
-        byte[] key = Convert.FromHexString("E9DEE72C8F0C0FA62DDB49F46F73964706075316ED247A3739CBA38303A98BF6");
-        // S = BE329713...
-        byte[] s = Convert.FromHexString("BE32971343FC9A48A02A885F194B09A1");
-        // X = B194BAC8...
-        byte[] x = Convert.FromHexString("B194BAC80A08F53B366D008E584A5DE48504FA9D1BB6C7AC252E72C202FDCE0D5BE3D61217B96181FE6786AD716B890B");
-
-        // Ожидаемый Y из таблицы А.15
-        string expectedY = "52C9AF96FF50F64435FC43DEF56BD797D5B5B1FF79FB41257AB9CDF6E63E81F8F00341473EAE409833622DE05213773A";
-
-        using var algo = new BelTAlgorithm(k => BeltHash.BelTBlock(k));
-        algo.Mode = CTR;
-        algo.Padding = PaddingMode.None;
-
-        using var encryptor = algo.CreateEncryptor(key, s);
-        byte[] actualY = encryptor.TransformFinalBlock(x, 0, x.Length);
-
-        Assert.That(Convert.ToHexString(actualY), Is.EqualTo(expectedY));
+        _block = new BelTBlock(); // Твоя реализация 6.1
+        _ctr = new BelTCtr(_block);
     }
 
     [Test]
-    public void Decrypt_Ctr_TableA16_PartialBlock_ReturnsCorrectResult()
+    public void Process_TableA15_Encryption_Success()
     {
-        // K = 92BD9B1C...
-        byte[] key = Convert.FromHexString("92BD9B1CE5D141015445FBC95E4D0EF2682080AA227D642F2687F93490405511");
-        // S = 7ECDA4D0...
-        byte[] s = Convert.FromHexString("7ECDA4D01544AF8CA58450BF66D2E88A");
-        // Y = E12BDC1A... (44 байта)
-        byte[] y = Convert.FromHexString("E12BDC1AE28257EC703FCCF095EE8DF1C1AB76389FE678CAF7C6F860D5BB9C4FF33C657B637C306ADD4EA779");
+        // Данные из таблицы А.15
+        var k = Core.BelTMath.H[128..160];
+        var s = Core.BelTMath.H[192..208];
+        var x = Core.BelTMath.H[..48];
 
-        // Ожидаемый X из таблицы А.16
-        string expectedX = "DF181ED008A20F43DCBBB93650DAD34B389CDEE5826D40E2D4BD80F49A93F5D212F6333166456F169043CC5F";
+        var expectedY = new byte[]
+        {
+            0x52, 0xC9, 0xAF, 0x96, 0xFF, 0x50, 0xF6, 0x44, 
+            0x35, 0xFC, 0x43, 0xDE, 0xF5, 0x6B, 0xD7, 0x97, 
+            0xD5, 0xB5, 0xB1, 0xFF, 0x79, 0xFB, 0x41, 0x25, 
+            0x7A, 0xB9, 0xCD, 0xF6, 0xE6, 0x3E, 0x81, 0xF8,
+            0xF0, 0x03, 0x41, 0x47, 0x3E, 0xAE, 0x40, 0x98, 
+            0x33, 0x62, 0x2D, 0xE0, 0x52, 0x13, 0x77, 0x3A
+        };
 
-        using var algo = new BelTAlgorithm(k => BeltHash.BelTBlock(k));
-        algo.Mode = CTR;
+        var actualY = new byte[x.Length];
+        _ctr.Process(x, k, s, actualY);
 
-        // В CTR дешифратор создается точно так же, как шифратор
-        using var decryptor = algo.CreateDecryptor(key, s);
-        byte[] actualX = decryptor.TransformFinalBlock(y, 0, y.Length);
+        TestContext.Out.WriteLine($"Actual Y:   {BitConverter.ToString(actualY)}");
+        TestContext.Out.WriteLine($"Expected Y: {BitConverter.ToString(expectedY)}");
+        Assert.That(actualY, Is.EqualTo(expectedY), "CTR Encryption failed (Table A.15)");
+    }
 
-        Assert.That(Convert.ToHexString(actualX), Is.EqualTo(expectedX));
+    [Test]
+    public void Process_TableA15_Decryption_Is_Inverse()
+    {
+        // Проверка того, что повторный запуск Process возвращает исходный текст
+        var k = Core.BelTMath.H[160..192];
+        var s = Core.BelTMath.H[208..224];
+        var y = Core.BelTMath.H[64..108];
+
+        var expectedX = new byte[]
+        {
+            0xDF, 0x18, 0x1E, 0xD0, 0x08, 0xA2, 0x0F, 0x43, 
+            0xDC, 0xBB, 0xB9, 0x36, 0x50, 0xDA, 0xD3, 0x4B, 
+            0x38, 0x9C, 0xDE, 0xE5, 0x82, 0x6D, 0x40, 0xE2, 
+            0xD4, 0xBD, 0x80, 0xF4, 0x9A, 0x93, 0xF5, 0xD2,
+            0x12, 0xF6, 0x33, 0x31, 0x66, 0x45, 0x6F, 0x16,
+            0x90, 0x43, 0xCC, 0x5F
+        };
+
+        var actualX = new byte[y.Length];
+        _ctr.Process(y, k, s, actualX);
+
+        TestContext.Out.WriteLine($"Actual X:   {BitConverter.ToString(actualX)}");
+        TestContext.Out.WriteLine($"Expected X: {BitConverter.ToString(expectedX)}");
+        Assert.That(actualX, Is.EqualTo(expectedX), "CTR Decryption failed (Inverse property)");
     }
 }
