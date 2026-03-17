@@ -50,9 +50,13 @@ public static class BelTMath
             return (data[i / 8] & (1 << (i % 8))) != 0;
         }
 
-        public static void Xor(Span<byte> target, ReadOnlySpan<byte> source)
+        /// <summary>
+        /// XOR для произвольного количества байт (Lo(source, length))
+        /// </summary>
+        public static void Xor(Span<byte> target, ReadOnlySpan<byte> source, int length = 16)
         {
-            for (int i = 0; i < 16; i++) target[i] ^= source[i];
+            for (int i = 0; i < length; i++)
+                target[i] ^= source[i];
         }
     }
 

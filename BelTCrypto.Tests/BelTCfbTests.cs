@@ -1,58 +1,69 @@
 ﻿using BelTCrypto.Core;
-using BelTCrypto.Net;
-using System.Security.Cryptography;
+using BelTCrypto.Core.Interfaces;
 
 namespace BelTCrypto.Tests;
 
 [TestFixture]
 public class BelTCfbTests
 {
-    [Test]
-    public void Encrypt_Cfb_WithUserProvidedData_ReturnsCorrectResult()
+    private IBelTCfb _cfb;
+    private IBelTBlock _block;
+
+    [SetUp]
+    public void Setup()
     {
-        // Данные из твоего сообщения:
-
-        // K = E9DEE72C 8F0C0FA6 2DDB49F4 6F739647 06075316 ED247A37 39CBA383 03A98BF6
-        byte[] key = Convert.FromHexString("E9DEE72C8F0C0FA62DDB49F46F73964706075316ED247A3739CBA38303A98BF6");
-
-        // S = BE329713 43FC9A48 A02A885F 194B09A1
-        byte[] s = Convert.FromHexString("BE32971343FC9A48A02A885F194B09A1");
-
-        // X = B194BAC8 0A08F53B 366D008E 584A5DE4 8504FA9D 1BB6C7AC 252E72C2 02FDCE0D 5BE3D612 17B96181 FE6786AD 716B890B
-        byte[] x = Convert.FromHexString("B194BAC80A08F53B366D008E584A5DE48504FA9D1BB6C7AC252E72C202FDCE0D5BE3D61217B96181FE6786AD716B890B");
-
-        // Y = C31E490A 90EFA374 626CC99E 4B7B8540 A6E48685 464A5A06 849C9CA7 69A1B0AE 55C2CC59 39303EC8 32DD2FE1 6C8E5A1B
-        string expectedY = "C31E490A90EFA374626CC99E4B7B8540A6E48685464A5A06849C9CA769A1B0AE55C2CC5939303EC832DD2FE16C8E5A1B";
-
-        // Настраиваем алгоритм
-        using var algo = new BelTAlgorithm(k => BeltHash.BelTBlock(k));
-        algo.Mode = CipherMode.CFB;
-        algo.Padding = PaddingMode.None;
-
-        // Создаем шифратор (S передаем как IV)
-        using var encryptor = algo.CreateEncryptor(key, s);
-
-        // Выполняем зашифрование
-        byte[] actualY = encryptor.TransformFinalBlock(x, 0, x.Length);
-
-        // Проверка
-        Assert.That(Convert.ToHexString(actualY), Is.EqualTo(expectedY));
+        _block = new BelTBlock(); // Твоя реализация 6.1
+        _cfb = new BelTCfb(_block);
     }
 
     [Test]
-    public void Decrypt_Cfb_WithUserProvidedData_ReturnsCorrectResult()
+    public void Encrypt_TableA13_Success()
     {
-        byte[] key = Convert.FromHexString("92BD9B1CE5D141015445FBC95E4D0EF2682080AA227D642F2687F93490405511");
-        byte[] s = Convert.FromHexString("7ECDA4D01544AF8CA58450BF66D2E88A");
-        byte[] y = Convert.FromHexString("E12BDC1AE28257EC703FCCF095EE8DF1C1AB76389FE678CAF7C6F860D5BB9C4FF33C657B637C306ADD4EA7799EB23D31");
-        string expectedX = "FA9D107A86F375EE65CD1DB881224BD016AFF814938ED39B3361ABB0BF0851B652244EB06842DD4C94AA4500774E40BB";
+        // Данные из таблицы А.13
+        var k = Core.BelTMath.H[128..160];
+        var s = Core.BelTMath.H[192..208];
+        var x = Core.BelTMath.H[..48];
 
-        using var algo = new BelTAlgorithm(k => BeltHash.BelTBlock(k));
-        algo.Mode = CipherMode.CFB;
+        var expectedY = new byte[]
+        {
+            0xC3, 0x1E, 0x49, 0x0A, 0x90, 0xEF, 0xA3, 0x74, 
+            0x62, 0x6C, 0xC9, 0x9E, 0x4B, 0x7B, 0x85, 0x40, 
+            0xA6, 0xE4, 0x86, 0x85, 0x46, 0x4A, 0x5A, 0x06, 
+            0x84, 0x9C, 0x9C, 0xA7, 0x69, 0xA1, 0xB0, 0xAE,
+            0x55, 0xC2, 0xCC, 0x59, 0x39, 0x30, 0x3E, 0xC8, 
+            0x32, 0xDD, 0x2F, 0xE1, 0x6C, 0x8E, 0x5A, 0x1B
+        };
 
-        using var decryptor = algo.CreateDecryptor(key, s);
-        byte[] actualX = decryptor.TransformFinalBlock(y, 0, y.Length);
+        var actualY = new byte[x.Length];
+        _cfb.Encrypt(x, k, s, actualY);
 
-        Assert.That(Convert.ToHexString(actualX), Is.EqualTo(expectedX));
+        TestContext.Out.WriteLine($"Actual Y:   {BitConverter.ToString(actualY)}");
+        TestContext.Out.WriteLine($"Expected Y: {BitConverter.ToString(expectedY)}");
+        Assert.That(actualY, Is.EqualTo(expectedY), "CFB Encryption failed (Table A.13)");
+    }
+
+    [Test]
+    public void Decrypt_TableA13_Success()
+    {
+        var k = Core.BelTMath.H[160..192];
+        var s = Core.BelTMath.H[208..224];
+        var y = Core.BelTMath.H[64..112];
+
+        var expectedX = new byte[]
+        {
+            0xFA, 0x9D, 0x10, 0x7A, 0x86, 0xF3, 0x75, 0xEE, 
+            0x65, 0xCD, 0x1D, 0xB8, 0x81, 0x22, 0x4B, 0xD0, 
+            0x16, 0xAF, 0xF8, 0x14, 0x93, 0x8E, 0xD3, 0x9B, 
+            0x33, 0x61, 0xAB, 0xB0, 0xBF, 0x08, 0x51, 0xB6,
+            0x52, 0x24, 0x4E, 0xB0, 0x68, 0x42, 0xDD, 0x4C, 
+            0x94, 0xAA, 0x45, 0x00, 0x77, 0x4E, 0x40, 0xBB
+        };
+
+        var actualX = new byte[y.Length];
+        _cfb.Decrypt(y, k, s, actualX);
+
+        TestContext.Out.WriteLine($"Actual X:   {BitConverter.ToString(actualX)}");
+        TestContext.Out.WriteLine($"Expected X: {BitConverter.ToString(expectedX)}");
+        Assert.That(actualX, Is.EqualTo(expectedX), "CFB Decryption failed (Table A.13)");
     }
 }

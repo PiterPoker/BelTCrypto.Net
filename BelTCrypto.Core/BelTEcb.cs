@@ -22,7 +22,7 @@ internal class BelTEcb : IBelTEcb
         else
         {
             EncryptFullBlocks(x, y, k, n - 2);
-            FinalizeEcbEncryption(x, y, k, n, mBytes);
+            FinalizeEncryption(x, y, k, n, mBytes);
         }
     }
 
@@ -40,7 +40,7 @@ internal class BelTEcb : IBelTEcb
         else
         {
             DecryptFullBlocks(y, x, k, n - 2);
-            FinalizeEcbDecryption(y, x, k, n, mBytes);
+            FinalizeDecryption(y, x, k, n, mBytes);
         }
     }
 
@@ -56,7 +56,7 @@ internal class BelTEcb : IBelTEcb
             _block.Decrypt(y.Slice(i * 16, 16), k, x.Slice(i * 16, 16));
     }
 
-    private void FinalizeEcbEncryption(ReadOnlySpan<byte> x, Span<byte> y, ReadOnlySpan<byte> k, int n, int mBytes)
+    private void FinalizeEncryption(ReadOnlySpan<byte> x, Span<byte> y, ReadOnlySpan<byte> k, int n, int mBytes)
     {
         int idxPrev = (n - 2) * 16;
         int idxLast = (n - 1) * 16;
@@ -85,7 +85,7 @@ internal class BelTEcb : IBelTEcb
         }
     }
 
-    private void FinalizeEcbDecryption(ReadOnlySpan<byte> y, Span<byte> x, ReadOnlySpan<byte> k, int n, int mBytes)
+    private void FinalizeDecryption(ReadOnlySpan<byte> y, Span<byte> x, ReadOnlySpan<byte> k, int n, int mBytes)
     {
         int idxPrev = (n - 2) * 16;
         int idxLast = (n - 1) * 16;
