@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Buffers.Binary;
+using System.Runtime.CompilerServices;
 
 namespace BelTCrypto.Core;
 
@@ -57,6 +58,25 @@ public static class BelTMath
         {
             for (int i = 0; i < length; i++)
                 target[i] ^= source[i];
+        }
+
+        public static void Phi1(ReadOnlySpan<byte> u, Span<byte> result)
+        {
+            (uint a, uint b, uint c, uint d) = BlockUtils.ReadUInt32LittleEndian(u);
+            BlockUtils.WriteUInt32LittleEndian(b,c,d,a^b, result);
+        }
+
+        public static void Phi2(ReadOnlySpan<byte> u, Span<byte> result)
+        {
+            (uint a, uint b, uint c, uint d) = BlockUtils.ReadUInt32LittleEndian(u);
+            BlockUtils.WriteUInt32LittleEndian(a^d, a, b, c, result);
+        }
+
+        public static void ApplyPsi(ReadOnlySpan<byte> partial, Span<byte> result)
+        {
+            result.Clear(); // Заполняем нулями 0^127
+            partial.CopyTo(result);
+            result[partial.Length] = 0x80; // Добавляем 1 (байт 0x01 в начало свободного места)
         }
     }
 

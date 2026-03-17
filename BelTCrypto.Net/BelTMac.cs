@@ -1,12 +1,12 @@
 ﻿using BelTCrypto.Core;
-using BelTCrypto.Core.Interfaces;
+using BelTCrypto.Core.Interfaces.Old;
 using System.Security.Cryptography;
 
 namespace BelTCrypto.Net;
 
 public sealed class BelTMac : KeyedHashAlgorithm
 {
-    private readonly IBelTMac _engine;
+    private readonly IBelTMacOld _engine;
     private readonly byte[] _buffer = new byte[16];
     private int _bufferOffset;
 

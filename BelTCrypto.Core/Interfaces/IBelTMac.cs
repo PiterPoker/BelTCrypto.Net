@@ -1,8 +1,5 @@
 ﻿namespace BelTCrypto.Core.Interfaces;
 
-public interface IBelTMac : IDisposable
+public interface IBelTMac : IMessageAuthenticationCode
 {
-    void Reset();
-    byte[] Finalize(ReadOnlySpan<byte> lastChunk, int length);
-    void ProcessBlock(ReadOnlySpan<byte> block);
 }
