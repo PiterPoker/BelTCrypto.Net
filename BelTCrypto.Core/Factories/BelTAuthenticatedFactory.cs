@@ -13,7 +13,7 @@ public static class BelTAuthenticatedFactory
     public static IAuthenticatedEncryption Create(BeltAeadScheme scheme) => scheme switch
     {
         BeltAeadScheme.Dwp => new BelTDwp(new BelTBlock()),
-        BeltAeadScheme.Che => throw new NotImplementedException(),
+        BeltAeadScheme.Che => new BelTChe(new BelTBlock()),
         _ => throw new CryptographicException($"Режим {scheme} не поддерживается для BelT"),
     };
 

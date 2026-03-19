@@ -63,13 +63,13 @@ public static class BelTMath
         public static void Phi1(ReadOnlySpan<byte> u, Span<byte> result)
         {
             (uint a, uint b, uint c, uint d) = BlockUtils.ReadUInt32LittleEndian(u);
-            BlockUtils.WriteUInt32LittleEndian(b,c,d,a^b, result);
+            BlockUtils.WriteUInt32LittleEndian(b, c, d, a ^ b, result);
         }
 
         public static void Phi2(ReadOnlySpan<byte> u, Span<byte> result)
         {
             (uint a, uint b, uint c, uint d) = BlockUtils.ReadUInt32LittleEndian(u);
-            BlockUtils.WriteUInt32LittleEndian(a^d, a, b, c, result);
+            BlockUtils.WriteUInt32LittleEndian(a ^ d, a, b, c, result);
         }
 
         public static void ApplyPsi(ReadOnlySpan<byte> partial, Span<byte> result)

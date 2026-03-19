@@ -1,5 +1,4 @@
-﻿using BelTCrypto.Core;
-using BelTCrypto.Core.Factories;
+﻿using BelTCrypto.Core.Factories;
 using BelTCrypto.Core.Interfaces;
 
 namespace BelTCrypto.Tests;
@@ -14,7 +13,7 @@ public class BelTDwpTests
 
     [Test]
     public void Protect_TableA19_Success()
-    {        
+    {
         // Данные из таблицы А.19
         byte[] i = Core.BelTMath.H[16..48];
 
