@@ -1,6 +1,5 @@
 ﻿namespace BelTCrypto.Core.Interfaces;
 
-public interface IBelTBlock : IEncryptor, IDecryptor, IDisposable
+public interface IBelTBlock : IEncryptor, IDecryptor
 {
-    void ResetKey(ReadOnlySpan<byte> newKey);
 }

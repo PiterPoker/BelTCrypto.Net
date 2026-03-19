@@ -1,78 +1,110 @@
-﻿using BelTCrypto.Core;
+﻿using BelTCrypto.Core.Factories;
 using BelTCrypto.Core.Interfaces;
-using NUnit.Framework;
 
 namespace BelTCrypto.Tests;
 
 [TestFixture]
-public class BelTEcbTests
+internal class BelTEcbTests
 {
-    private static byte[] StringToByteArray(string hex) =>
-        [.. Enumerable.Range(0, hex.Length / 2).Select(x => Convert.ToByte(hex.Substring(x * 2, 2), 16))];
+    private IBelTEcb _ecb;
+
+    [SetUp]
+    public void Setup() => _ecb = BelTEcbFactory.Create();
 
     [Test]
-    public void Encrypt_SimpleReplacement_FullBlocks_ReturnsCorrectResult()
+    public void Encrypt_TableA9_FullBlocks()
     {
-        // Данные из первой части Таблицы А.9 (48 байт / 3 блока)
-        byte[] key = StringToByteArray("E9DEE72C8F0C0FA62DDB49F46F73964706075316ED247A3739CBA38303A98BF6");
-        byte[] x = StringToByteArray("B194BAC80A08F53B366D008E584A5DE48504FA9D1BB6C7AC252E72C202FDCE0D5BE3D61217B96181FE6786AD716B890B");
-        string expectedY = "69CCA1C93557C9E3D66BC3E0FA88FA6E5F23102EF109710775017F73806DA9DC46FB2ED2CE771F26DCB5E5D1569F9AB0";
+        var k = Core.BelTMath.H[128..160];
+        var x = Core.BelTMath.H[..48];
+        var expectedY = new byte[]
+        {
+            0x69, 0xCC, 0xA1, 0xC9, 0x35, 0x57, 0xC9, 0xE3,
+            0xD6, 0x6B, 0xC3, 0xE0, 0xFA, 0x88, 0xFA, 0x6E,
+            0x5F, 0x23, 0x10, 0x2E, 0xF1, 0x09, 0x71, 0x07,
+            0x75, 0x01, 0x7F, 0x73, 0x80, 0x6D, 0xA9, 0xDC,
+            0x46, 0xFB, 0x2E, 0xD2, 0xCE, 0x77, 0x1F, 0x26,
+            0xDC, 0xB5, 0xE5, 0xD1, 0x56, 0x9F, 0x9A, 0xB0
+        };
 
-        using var block = BeltHash.BelTBlock(key);
-        using var encryptor = BeltHash.BelTEcbEncryptTransform(block);
+        var actualY = new byte[x.Length];
+        _ecb.Encrypt(x, k, actualY);
 
-        // ICryptoTransform: используем TransformFinalBlock для получения результата целиком
-        byte[] actualY = encryptor.TransformFinalBlock(x, 0, x.Length);
+        TestContext.Out.WriteLine($"Actual X:   {BitConverter.ToString(actualY)}");
+        TestContext.Out.WriteLine($"Expected X: {BitConverter.ToString(expectedY)}");
 
-        Assert.That(Convert.ToHexString(actualY), Is.EqualTo(expectedY));
+        Assert.That(actualY, Is.EqualTo(expectedY), "ECB Full Blocks failed");
     }
 
     [Test]
-    public void Encrypt_SimpleReplacement_PartialBlock_ReturnsCorrectResult()
+    public void Encrypt_TableA9_PartialBlock()
     {
-        // Данные из второй части Таблицы А.9 (44 байта)
-        // Тут работает логика 3.2 и 3.3 стандарта (захват хвоста r)
-        byte[] key = StringToByteArray("E9DEE72C8F0C0FA62DDB49F46F73964706075316ED247A3739CBA38303A98BF6");
-        byte[] x = StringToByteArray("B194BAC80A08F53B366D008E584A5DE48504FA9D1BB6C7AC252E72C202FDCE0D5BE3D61217B96181FE6786AD716B89");
-        string expectedY = "69CCA1C93557C9E3D66BC3E0FA88FA6E36F00CFED6D1CA1498C12798F4BEB2075F23102EF109710775017F73806DA9";
+        var k = Core.BelTMath.H[128..160];
+        var x = Core.BelTMath.H[..47];
+        var expectedY = new byte[]
+        {
+            0x69, 0xCC, 0xA1, 0xC9, 0x35, 0x57, 0xC9, 0xE3,
+            0xD6, 0x6B, 0xC3, 0xE0, 0xFA, 0x88, 0xFA, 0x6E,
+            0x36, 0xF0, 0x0C, 0xFE, 0xD6, 0xD1, 0xCA, 0x14,
+            0x98, 0xC1, 0x27, 0x98, 0xF4, 0xBE, 0xB2, 0x07,
+            0x5F, 0x23, 0x10, 0x2E, 0xF1, 0x09, 0x71, 0x07,
+            0x75, 0x01, 0x7F, 0x73, 0x80, 0x6D, 0xA9
+        };
 
-        using var block = BeltHash.BelTBlock(key);
-        using var encryptor = BeltHash.BelTEcbEncryptTransform(block);
+        var actualY = new byte[x.Length];
+        _ecb.Encrypt(x, k, actualY);
 
-        byte[] actualY = encryptor.TransformFinalBlock(x, 0, x.Length);
+        TestContext.Out.WriteLine($"Actual X:   {BitConverter.ToString(actualY)}");
+        TestContext.Out.WriteLine($"Expected X: {BitConverter.ToString(expectedY)}");
 
-        Assert.That(Convert.ToHexString(actualY), Is.EqualTo(expectedY));
+        Assert.That(actualY, Is.EqualTo(expectedY), "ECB Full Blocks failed");
     }
 
     [Test]
-    public void Decrypt_TableA10_FullBlocks_ReturnsCorrectResult()
+    public void Decrypt_TableA10_FullBlocks()
     {
-        // Данные из первой части Таблицы А.10 (48 байт)
-        byte[] key = StringToByteArray("92BD9B1CE5D141015445FBC95E4D0EF2682080AA227D642F2687F93490405511");
-        byte[] y = StringToByteArray("E12BDC1AE28257EC703FCCF095EE8DF1C1AB76389FE678CAF7C6F860D5BB9C4FF33C657B637C306ADD4EA7799EB23D31");
-        string expectedX = "0DC5300600CAB840B38448E5E993F421E55A239F2AB5C5D5FDB6E81B40938E2A54120CA3E6E19C7AD750FC3531DAEAB7";
+        // Данные из Таблицы А.10 (полные блоки)
+        var k = Core.BelTMath.H[160..192];
+        var y = Core.BelTMath.H[64..112];
+        var expectedX = new byte[]
+        {
+            0x0D, 0xC5, 0x30, 0x06, 0x00, 0xCA, 0xB8, 0x40,
+            0xB3, 0x84, 0x48, 0xE5, 0xE9, 0x93, 0xF4, 0x21,
+            0xE5, 0x5A, 0x23, 0x9F, 0x2A, 0xB5, 0xC5, 0xD5,
+            0xFD, 0xB6, 0xE8, 0x1B, 0x40, 0x93, 0x8E, 0x2A,
+            0x54, 0x12, 0x0C, 0xA3, 0xE6, 0xE1, 0x9C, 0x7A,
+            0xD7, 0x50, 0xFC, 0x35, 0x31, 0xDA, 0xEA, 0xB7
+        };
 
-        using var block = BeltHash.BelTBlock(key);
-        using var decryptor = BeltHash.BelTEcbDecryptTransform(block);
+        var actualX = new byte[y.Length];
+        _ecb.Decrypt(y, k, actualX);
 
-        byte[] actualX = decryptor.TransformFinalBlock(y, 0, y.Length);
+        TestContext.Out.WriteLine($"Actual X:   {BitConverter.ToString(actualX)}");
+        TestContext.Out.WriteLine($"Expected X: {BitConverter.ToString(expectedX)}");
 
-        Assert.That(Convert.ToHexString(actualX), Is.EqualTo(expectedX));
+        Assert.That(actualX, Is.EqualTo(expectedX), "ECB Decrypt Full Blocks failed (Table A.10)");
     }
 
     [Test]
-    public void Decrypt_TableA10_PartialBlock_ReturnsCorrectResult()
+    public void Decrypt_TableA10_PartialBlock()
     {
-        // Данные из второй части Таблицы А.10 (36 байт)
-        byte[] key = StringToByteArray("92BD9B1CE5D141015445FBC95E4D0EF2682080AA227D642F2687F93490405511");
-        byte[] y = StringToByteArray("E12BDC1AE28257EC703FCCF095EE8DF1C1AB76389FE678CAF7C6F860D5BB9C4FF33C657B");
-        string expectedX = "0DC5300600CAB840B38448E5E993F4215780A6E2B69EAFBB258726D7B6718523E55A239F";
+        // Данные из Таблицы А.10 (неполный блок, 41 байт)
+        var k = Core.BelTMath.H[160..192];
+        var y = Core.BelTMath.H[64..100];
+        var expectedX = new byte[]
+        {
+            0x0D, 0xC5, 0x30, 0x06, 0x00, 0xCA, 0xB8, 0x40,
+            0xB3, 0x84, 0x48, 0xE5, 0xE9, 0x93, 0xF4, 0x21,
+            0x57, 0x80, 0xA6, 0xE2, 0xB6, 0x9E, 0xAF, 0xBB,
+            0x25, 0x87, 0x26, 0xD7, 0xB6, 0x71, 0x85, 0x23,
+            0xE5, 0x5A, 0x23, 0x9F
+        };
 
-        using var block = BeltHash.BelTBlock(key);
-        using var decryptor = BeltHash.BelTEcbDecryptTransform(block);
+        var actualX = new byte[y.Length];
+        _ecb.Decrypt(y, k, actualX);
 
-        byte[] actualX = decryptor.TransformFinalBlock(y, 0, y.Length);
+        TestContext.Out.WriteLine($"Actual X:   {BitConverter.ToString(actualX)}");
+        TestContext.Out.WriteLine($"Expected X: {BitConverter.ToString(expectedX)}");
 
-        Assert.That(Convert.ToHexString(actualX), Is.EqualTo(expectedX));
+        Assert.That(actualX, Is.EqualTo(expectedX), "ECB Decrypt Partial Block failed (Table A.10)");
     }
 }

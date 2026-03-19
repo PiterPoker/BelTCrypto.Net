@@ -1,43 +1,73 @@
-﻿using BelTCrypto.Net;
-using NUnit.Framework;
+﻿using BelTCrypto.Core;
+using BelTCrypto.Core.Factories;
+using BelTCrypto.Core.Interfaces;
 
 namespace BelTCrypto.Tests;
 
 [TestFixture]
 public class BelTMacTests
 {
-    // Общий ключ для обоих тестов
-    private readonly byte[] _key = Convert.FromHexString("E9DEE72C8F0C0FA62DDB49F46F73964706075316ED247A3739CBA38303A98BF6");
+    private IBelTMac _mac;
 
-    [Test]
-    public void Mac_TableA17_Case1_PartialBlock()
+    [SetUp]
+    public void Setup()
     {
-        // X = B194BAC8 0A08F53B 366D008E 58 (13 байт)
-        byte[] x = Convert.FromHexString("B194BAC80A08F53B366D008E58");
-
-        // Ожидаемый Y: 7260DA60 138F96C9
-        // Внимание: Convert.ToHexString выдаст байты в том порядке, в котором они лежат в массиве.
-        // Если в массиве [0x72, 0x60, ...], то строка будет "7260DA60138F96C9"
-        string expectedY = "7260DA60138F96C9";
-
-        using var mac = new BelTMac(_key);
-        byte[] actualY = mac.ComputeHash(x);
-
-        Assert.That(Convert.ToHexString(actualY), Is.EqualTo(expectedY));
+        _mac = BelTMacFactory.Create();
     }
 
     [Test]
-    public void Mac_TableA17_Case2_FullBlocks()
+    public void Compute_TableA17_PartialBlock_Success()
     {
-        // X = 48 байт (3 полных блока по 16 байт)
-        byte[] x = Convert.FromHexString("B194BAC80A08F53B366D008E584A5DE48504FA9D1BB6C7AC252E72C202FDCE0D5BE3D61217B96181FE6786AD716B890B");
+        // Тест 1: Неполный блок (13 байт)
+        var k = Core.BelTMath.H[128..160];
+        var x = Core.BelTMath.H[..13];
+        var expectedT = new byte[]
+        {
+            0x72, 0x60, 0xDA, 0x60, 0x13, 0x8F, 0x96, 0xC9
+        };
 
-        // Ожидаемый Y: 2DAB5977 1B4B16D0
-        string expectedY = "2DAB59771B4B16D0";
+        Span<byte> actualT = stackalloc byte[8];
+        _mac.Compute(x, k, actualT);
 
-        using var mac = new BelTMac(_key);
-        byte[] actualY = mac.ComputeHash(x);
+        TestContext.Out.WriteLine($"Actual mac:   {BitConverter.ToString(actualT.ToArray())}");
+        TestContext.Out.WriteLine($"Expected mac: {BitConverter.ToString(expectedT)}");
 
-        Assert.That(Convert.ToHexString(actualY), Is.EqualTo(expectedY));
+        Assert.That(actualT.ToArray(), Is.EqualTo(expectedT), "MAC failed for partial block");
+    }
+
+    [Test]
+    public void Compute_TableA17_FullBlocks_Success()
+    {
+        // Тест 2: Три полных блока (48 байт)
+        var k = Core.BelTMath.H[128..160];
+        var x = Core.BelTMath.H[..48];
+        var expectedT = new byte[]
+        {
+            0x2D, 0xAB, 0x59, 0x77, 0x1B, 0x4B, 0x16, 0xD0
+        };
+
+
+        Span<byte> actualT = stackalloc byte[8];
+        _mac.Compute(x, k, actualT);
+
+        TestContext.Out.WriteLine($"Actual mac:   {BitConverter.ToString(actualT.ToArray())}");
+        TestContext.Out.WriteLine($"Expected mac: {BitConverter.ToString(expectedT)}");
+
+        Assert.That(actualT.ToArray(), Is.EqualTo(expectedT), "MAC failed for multiple full blocks");
+    }
+
+    [Test]
+    public void Verify_ValidMac_ReturnsTrue()
+    {
+        var k = Core.BelTMath.H[128..160];
+        var x = Core.BelTMath.H[..48];
+        var validMac = new byte[]
+        {
+            0x2D, 0xAB, 0x59, 0x77, 0x1B, 0x4B, 0x16, 0xD0
+        };
+
+        bool isValid = _mac.Verify(x, k, validMac);
+
+        Assert.That(isValid, Is.True, "Verification should pass for correct MAC");
     }
 }

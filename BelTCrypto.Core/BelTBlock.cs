@@ -1,192 +1,144 @@
 ﻿using BelTCrypto.Core.Interfaces;
 using System.Buffers.Binary;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
+using System.Runtime.CompilerServices;
 
 namespace BelTCrypto.Core;
 
-internal sealed class BelTBlock : IBelTBlock
+internal class BelTBlock : IBelTBlock
 {
-    private readonly uint[] _roundKeys; 
-    private bool _disposed;
-
-    public BelTBlock(ReadOnlySpan<byte> key)
-        : this()
+    public void Decrypt(ReadOnlySpan<byte> y, ReadOnlySpan<byte> k, Span<byte> x)
     {
-        this.GenerateRoundKeys(key);
-    }
+        if (k.Length != 32) throw new ArgumentException("Ключ — 256 бит.");
 
-    public BelTBlock()
-    {
-        _roundKeys = new uint[8];
-    }
+        // Шаг 1 и 4: Читаем Y как (a, b, c, d)
+        var (a, b, c, d) = BlockUtils.ReadUInt32LittleEndian(y);
 
-    public void Encrypt(ReadOnlySpan<byte> input, Span<byte> output)
-    {
-        // 1. Разбиение на слова a, b, c, d (X1, X2, X3, X4) - Little Endian
-        uint a = BinaryPrimitives.ReadUInt32LittleEndian(input[..4]);
-        uint b = BinaryPrimitives.ReadUInt32LittleEndian(input.Slice(4, 4));
-        uint c = BinaryPrimitives.ReadUInt32LittleEndian(input.Slice(8, 4));
-        uint d = BinaryPrimitives.ReadUInt32LittleEndian(input.Slice(12, 4));
+        Span<uint> masterKeys = stackalloc uint[8];
 
-        for (int i = 1; i <= 8; i++)
+        try
         {
-            // В BelT раундовые ключи k[1]..k[7] в каждом такте одни и те же? 
-            // Нет, k[i] = K_{((i-1) mod 8) + 1}. Но внутри такта используются разные K_j.
-            // Согласно стандарту (п. 6.1.3), в такте i используются ключи:
-            // k[1]=K1, k[2]=K2 ... но они смещаются? 
-            // Судя по твоей таблице А.3, используются конкретные индексы k[1]..k[7].
+            for (int i = 0; i < 8; i++)
+                masterKeys[i] = BinaryPrimitives.ReadUInt32LittleEndian(k[(i * 4)..(i * 4 + 4)]);
 
-            // ВАЖНО: В каждом такте i ключи k[j] вычисляются как K_((7(i-1) + j-1) mod 8 + 1)
-            uint k1 = GetKey(i, 1);
-            uint k2 = GetKey(i, 2);
-            uint k3 = GetKey(i, 3);
-            uint k4 = GetKey(i, 4);
-            uint k5 = GetKey(i, 5);
-            uint k6 = GetKey(i, 6);
-            uint k7 = GetKey(i, 7);
+            // Шаг 5: Цикл i = 8...1
+            for (int i = 8; i >= 1; i--)
+            {
+                (a, b, c, d) = ExecuteDecryptStep(a, b, c, d, masterKeys, (uint)i);
+            }
 
-            // 1) b = b ^ G5(a + k1)
-            b ^= BelTMath.G(a + k1, 5);
-            // 2) c = c ^ G21(d + k2)
-            c ^= BelTMath.G(d + k2, 21);
-            // 3) a = a - G13(b + k3)
-            a -= BelTMath.G(b + k3, 13);
-            // 4) e = G21(b + c + k4) ^ i
-            uint e = BelTMath.G(b + c + k4, 21) ^ (uint)i;
-            // 5) b = b + e
-            b += e;
-            // 6) c = c - e
-            c -= e;
-            // 7) d = d + G13(c + k5)
-            d += BelTMath.G(c + k5, 13);
-            // 8) b = b ^ G21(a + k6)
-            b ^= BelTMath.G(a + k6, 21);
-            // 9) c = c ^ G5(d + k7)
-            c ^= BelTMath.G(d + k7, 5);
-
-            // 10-12) Перестановки a <-> b, c <-> d, b <-> c
-            // Итог: a_next = b, b_next = d, c_next = a, d_next = c
-            uint nextA = b;
-            uint nextB = d;
-            uint nextC = a;
-            uint nextD = c;
-
-            a = nextA; b = nextB; c = nextC; d = nextD;
+            // Шаг 6: X ← c ‖ a ‖ d ‖ b
+            BlockUtils.WriteUInt32LittleEndian(c, a, d, b, x);
         }
-
-        // Финальная сборка Y. По таблице А.2 для i=8:
-        // a=D66BC3E0, b=69CCA1C9, c=FA88FA6E, d=3557C9E3
-        // Y должен быть: 69CCA1C9 3557C9E3 D66BC3E0 FA88FA6E
-        BinaryPrimitives.WriteUInt32LittleEndian(output[..4], b);
-        BinaryPrimitives.WriteUInt32LittleEndian(output.Slice(4, 4), d);
-        BinaryPrimitives.WriteUInt32LittleEndian(output.Slice(8, 4), a);
-        BinaryPrimitives.WriteUInt32LittleEndian(output.Slice(12, 4), c);
-    }
-
-    public void Decrypt(ReadOnlySpan<byte> input, Span<byte> output)
-    {
-        // 1. Разбиение входного шифртекста Y на слова (b, d, a, c)
-        // ВНИМАНИЕ: При шифровании мы записывали в output (b, d, a, c). 
-        // Значит при чтении для расшифрования:
-        uint b = BinaryPrimitives.ReadUInt32LittleEndian(input[..4]);
-        uint d = BinaryPrimitives.ReadUInt32LittleEndian(input.Slice(4, 4));
-        uint a = BinaryPrimitives.ReadUInt32LittleEndian(input.Slice(8, 4));
-        uint c = BinaryPrimitives.ReadUInt32LittleEndian(input.Slice(12, 4));
-
-        // 2. Выполнение 8 тактов в обратном порядке
-        for (int i = 8; i >= 1; i--)
+        finally
         {
-            // Ключи для такта i те же самые
-            uint k1 = GetKey(i, 1);
-            uint k2 = GetKey(i, 2);
-            uint k3 = GetKey(i, 3);
-            uint k4 = GetKey(i, 4);
-            uint k5 = GetKey(i, 5);
-            uint k6 = GetKey(i, 6);
-            uint k7 = GetKey(i, 7);
-
-            // Инверсия финальных перестановок такта: (b, d, a, c) -> (a, b, c, d)
-            // При шифровании было: nextA=b, nextB=d, nextC=a, nextD=c.
-            // Значит обратное:
-            uint prevA = c;
-            uint prevB = a;
-            uint prevC = d;
-            uint prevD = b;
-            a = prevA; b = prevB; c = prevC; d = prevD;
-
-            // 9) c = c ^ G5(d + k7)
-            c ^= BelTMath.G(d + k7, 5);
-            // 8) b = b ^ G21(a + k6)
-            b ^= BelTMath.G(a + k6, 21);
-            // 7) d = d - G13(c + k5)
-            d -= BelTMath.G(c + k5, 13);
-            // 6) c = c + e
-            // 5) b = b - e
-            // 4) e = G21(b + c + k4) ^ i
-            // Чтобы сделать шаги 5 и 6, нам сначала нужно вычислить e.
-            // Но e зависит от b и c после шагов 5 и 6? Нет. 
-            // В оригинале: b_new = b_old + e, c_new = c_old - e.
-            // Тогда (b_new + c_new) = (b_old + e + c_old - e) = b_old + c_old.
-            // Сумма b + c инвариантна относительно e!
-            uint e = BelTMath.G(b + c + k4, 21) ^ (uint)i;
-            c += e; // c_old = c_new + e
-            b -= e; // b_old = b_new - e
-
-            // 3) a = a + G13(b + k3)
-            a += BelTMath.G(b + k3, 13);
-            // 2) c = c ^ G21(d + k2)
-            c ^= BelTMath.G(d + k2, 21);
-            // 1) b = b ^ G5(a + k1)
-            b ^= BelTMath.G(a + k1, 5);
-        }
-
-        // 3. Сборка результата X = (a, b, c, d)
-        BinaryPrimitives.WriteUInt32LittleEndian(output[..4], a);
-        BinaryPrimitives.WriteUInt32LittleEndian(output.Slice(4, 4), b);
-        BinaryPrimitives.WriteUInt32LittleEndian(output.Slice(8, 4), c);
-        BinaryPrimitives.WriteUInt32LittleEndian(output.Slice(12, 4), d);
-    }
-
-    // Метод для получения ключа согласно расписанию (п. 7.1.1)
-    private uint GetKey(int step, int j)
-    {
-        int index = (7 * (step - 1) + j - 1) % 8;
-        return _roundKeys[index];
-    }
-
-    public void ResetKey(ReadOnlySpan<byte> newKey)
-    {
-        this.GenerateRoundKeys(newKey);
-    }
-
-    private void GenerateRoundKeys(ReadOnlySpan<byte> key)
-    {
-        if (key.Length != 32) throw new ArgumentException("Key must be 256 bits.");
-
-        for (int i = 0; i < 8; i++)
-        {
-            _roundKeys[i] = BinaryPrimitives.ReadUInt32LittleEndian(key.Slice(i * 4, 4));
+            masterKeys.Clear();
+            a = b = c = d = 0;
         }
     }
 
-
-
-    public void Dispose()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static (uint a, uint b, uint c, uint d) ExecuteDecryptStep(uint a, uint b, uint c, uint d, Span<uint> k, uint step)
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
+        static uint GetK(Span<uint> k, int j) => k[(j - 1) % 8];
+        int i = (int)step;
+
+        // 5.1) b ← b ⊕ G5(a ⊞ k[7i])
+        b ^= BelTMath.G(a + GetK(k, 7 * i), 5);
+
+        // 5.2) c ← c ⊕ G21(d ⊞ k[7i-1])
+        c ^= BelTMath.G(d + GetK(k, 7 * i - 1), 21);
+
+        // 5.3) a ← a ⊟ G13(b ⊞ k[7i-2])
+        a -= BelTMath.G(b + GetK(k, 7 * i - 2), 13);
+
+        // 5.4) e ← G21(b ⊞ c ⊞ k[7i-3]) ⊕ ⟨i⟩32
+        uint e = BelTMath.G(b + c + GetK(k, 7 * i - 3), 21) ^ (uint)i;
+
+        // 5.5) b ← b ⊞ e
+        b += e;
+
+        // 5.6) c ← c ⊟ e
+        c -= e;
+
+        // 5.7) d ← d ⊞ G13(c ⊞ k[7i-4])
+        d += BelTMath.G(c + GetK(k, 7 * i - 4), 13);
+
+        // 5.8) b ← b ⊕ G21(a ⊞ k[7i-5])
+        b ^= BelTMath.G(a + GetK(k, 7 * i - 5), 21);
+
+        // 5.9) c ← c ⊕ G5(d ⊞ k[7i-6])
+        c ^= BelTMath.G(d + GetK(k, 7 * i - 6), 5);
+
+        return (c, a, d, b);
     }
 
-    private void Dispose(bool disposing)
+    public void Encrypt(ReadOnlySpan<byte> x, ReadOnlySpan<byte> k, Span<byte> y)
     {
-        if (_disposed) return;
+        if (k.Length != 32) throw new ArgumentException("Ключ должен быть 256 бит.");
 
-        if (disposing)
+        var (a, b, c, d) = BlockUtils.ReadUInt32LittleEndian(x);
+
+        // 2. Развертывание ключа (извлечение 8 тактовых ключей)
+        // В простейшем случае это просто 8 uint-ов из 32-байтового массива
+        Span<uint> roundKeys = stackalloc uint[8];
+        try
         {
-            var span = MemoryMarshal.AsBytes(_roundKeys.AsSpan());
-            CryptographicOperations.ZeroMemory(span);
+            for (int i = 0; i < 8; i++)
+                roundKeys[i] = BinaryPrimitives.ReadUInt32LittleEndian(k[(i * 4)..(i * 4 + 4)]);
+
+            // 3. Основной цикл — 8 тактов
+            for (int i = 1; i <= 8; i++)
+            {
+                (a, b, c, d) = ExecuteEncryptStep(a, b, c, d, roundKeys, (uint)i);
+            }
+
+            BlockUtils.WriteUInt32LittleEndian(b, d, a, c, y);
+
         }
-        _disposed = true;
+        finally
+        {
+            roundKeys.Clear();
+            a = b = c = d = 0;
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static (uint a, uint b, uint c, uint d) ExecuteEncryptStep(uint a, uint b, uint c, uint d, Span<uint> k, uint step)
+    {
+        // Вспомогательная функция для k[j] = K((j-1) mod 8 + 1)
+        // Так как в C# индексы от 0 до 7, формула превращается в (j-1) % 8
+        static uint GetK(Span<uint> k, int j) => k[(j - 1) % 8];
+
+        int t = (int)step;
+
+        // 1) b ← b ⊕ G5(a ⊞ k[7i-6])
+        b ^= BelTMath.G(a + GetK(k, 7 * t - 6), 5);
+
+        // 2) c ← c ⊕ G21(d ⊞ k[7i-5])
+        c ^= BelTMath.G(d + GetK(k, 7 * t - 5), 21);
+
+        // 3) a ← a ⊟ G13(b ⊞ k[7i-4])
+        a -= BelTMath.G(b + GetK(k, 7 * t - 4), 13);
+
+        // 4) e ← G21(b ⊞ c ⊞ k[7i-3]) ⊕ ⟨i⟩32
+        var e = BelTMath.G(b + c + GetK(k, 7 * t - 3), 21) ^ step;
+
+        // 5) b ← b ⊞ e
+        b += e;
+
+        // 6) c ← c ⊟ e
+        c -= e;
+
+        // 7) d ← d ⊞ G13(c ⊞ k[7i-2])
+        d += BelTMath.G(c + GetK(k, 7 * t - 2), 13);
+
+        // 8) b ← b ⊕ G21(a ⊞ k[7i-1])
+        b ^= BelTMath.G(a + GetK(k, 7 * t - 1), 21);
+
+        // 9) c ← c ⊕ G5(d ⊞ k[7i])
+        c ^= BelTMath.G(d + GetK(k, 7 * t), 5);
+
+        // 10-12) Перестановки a↔b, c↔d, b↔c
+        return (b, d, a, c);
     }
 }

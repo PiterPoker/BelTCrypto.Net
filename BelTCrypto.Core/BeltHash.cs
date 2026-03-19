@@ -1,23 +1,26 @@
-﻿using BelTCrypto.Core.Interfaces;
+﻿using BelTCrypto.Core.Interfaces.Old;
+using BelTCrypto.Core.Old;
 using System.Security.Cryptography;
 
 namespace BelTCrypto.Core;
 
 public static class BeltHash
 {
-    public static byte SubstituteH(byte b) => BelTMath.SubstituteH(b);
-    public static uint RotHi(uint value, int bits) => BelTMath.RotHi(value, bits);
-    public static IBelTBlock BelTBlock() => new BelTBlock();
-    public static IBelTBlock BelTBlock(ReadOnlySpan<byte> key) => new BelTBlock(key);
-    public static IBelTWideBlock BelTWideBlock(IBelTBlock block) => new BelTWideBlock(block);
-    public static BelTKeyWrap BelTKeyWrap(IBelTWideBlock wideBlock) => new(wideBlock);
-    public static IBelTCompress BelTCompress(IBelTBlock block) => new BelTCompress(block);
-    public static IBelTEcbTransform BelTEcbEncryptTransform(IBelTBlock block) => new BelTEcbEncryptTransform(block);
-    public static IBelTEcbTransform BelTEcbDecryptTransform(IBelTBlock block) => new BelTEcbDecryptTransform(block);
-    public static IBelTCbcTransform BelTCbcEncryptTransform(IBelTBlock block, ReadOnlySpan<byte> iv) => new BelTCbcEncryptTransform(block, iv);
-    public static IBelTCbcTransform BelTCbcDecryptTransform(IBelTBlock block, ReadOnlySpan<byte> iv) => new BelTCbcDecryptTransform(block, iv); 
-    public static IBelTCfbTransform BelTCfbEncryptTransform(IBelTBlock block, ReadOnlySpan<byte> iv) => new BelTCfbEncryptTransform(block, iv);
-    public static IBelTCfbTransform BelTCfbDecryptTransform(IBelTBlock block, ReadOnlySpan<byte> iv) => new BelTCfbDecryptTransform(block, iv);
-    public static IBelTCrtTransform BelTCtrTransform(IBelTBlock block, ReadOnlySpan<byte> iv) => new BelTCtrTransform(block, iv);
-    public static IBelTMac BelTMac(IBelTBlock block) => new BelTMac(block);
+    public static byte SubstituteH(byte b) => BelTMathOld.SubstituteH(b);
+    public static uint RotHi(uint value, int bits) => BelTMathOld.RotHi(value, bits);
+    public static void MultiplyGF128(Span<byte> t, ReadOnlySpan<byte> r) => BelTMathOld.MultiplyGF128(t, r);
+    public static IBelTBlockOld BelTBlock() => new BelTBlockOld();
+    public static IBelTBlockOld BelTBlock(ReadOnlySpan<byte> key) => new BelTBlockOld(key);
+    public static IBelTWideBlockOld BelTWideBlock(IBelTBlockOld block) => new BelTWideBlockOld(block);
+    public static IBelTCompressOld BelTCompress(IBelTBlockOld block) => new BelTCompressOld(block);
+    public static IBelTEcbTransformOld BelTEcbEncryptTransform(IBelTBlockOld block) => new BelTEcbEncryptTransformOld(block);
+    public static IBelTEcbTransformOld BelTEcbDecryptTransform(IBelTBlockOld block) => new BelTEcbDecryptTransformOld(block);
+    public static IBelTCbcOldTransform BelTCbcEncryptTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv) => new BelTCbcEncryptOldTransform(block, iv);
+    public static IBelTCbcOldTransform BelTCbcDecryptTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv) => new BelTCbcDecryptOldTransform(block, iv); 
+    public static IBelTCfbOldTransform BelTCfbEncryptTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv) => new BelTCfbEncryptOldTransform(block, iv);
+    public static IBelTCfbOldTransform BelTCfbDecryptTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv) => new BelTCfbDecryptOldTransform(block, iv);
+    public static IBelTCrtOldTransform BelTCtrTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv) => new BelTCtrOldTransform(block, iv);
+    public static IBelTMacOld BelTMac(IBelTBlockOld block) => new BelTMacOld(block);
+
+    public static IBelTAeadOld BelTDwp(IBelTBlockOld block)=> new BelTDwpOld(block);
 }
