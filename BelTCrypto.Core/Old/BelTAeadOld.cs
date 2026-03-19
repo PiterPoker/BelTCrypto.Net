@@ -1,9 +1,8 @@
-﻿using BelTCrypto.Core.Interfaces;
-using BelTCrypto.Core.Interfaces.Old;
+﻿using BelTCrypto.Core.Interfaces.Old;
 
-namespace BelTCrypto.Core.Abstractions;
+namespace BelTCrypto.Core.Old;
 
-internal abstract class BelTAead(IBelTBlockOld block) : IBelTAead
+internal abstract class BelTAeadOld(IBelTBlockOld block) : IBelTAeadOld
 {
     protected readonly IBelTBlockOld _block = block ?? throw new ArgumentNullException(nameof(block));
     protected bool _isDisposed;

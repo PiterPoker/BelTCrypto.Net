@@ -1,12 +1,12 @@
 ﻿using BelTCrypto.Core;
-using BelTCrypto.Core.Interfaces;
+using BelTCrypto.Core.Interfaces.Old;
 using System.Security.Cryptography;
 
 namespace BelTCrypto.Net;
 
 public sealed class BeltAead : IDisposable
 {
-    private readonly IBelTAead _engine;
+    private readonly IBelTAeadOld _engine;
     private readonly int _tagSize = 8; // T ∈ {0,1}64 по стандарту
 
     public BeltAead(byte[] key, BeltAeadScheme scheme = BeltAeadScheme.Dwp)

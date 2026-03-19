@@ -1,5 +1,4 @@
-﻿using BelTCrypto.Core.Interfaces;
-using BelTCrypto.Core.Interfaces.Old;
+﻿using BelTCrypto.Core.Interfaces.Old;
 using BelTCrypto.Core.Old;
 using System.Security.Cryptography;
 
@@ -23,5 +22,5 @@ public static class BeltHash
     public static IBelTCrtOldTransform BelTCtrTransform(IBelTBlockOld block, ReadOnlySpan<byte> iv) => new BelTCtrOldTransform(block, iv);
     public static IBelTMacOld BelTMac(IBelTBlockOld block) => new BelTMacOld(block);
 
-    public static IBelTAead BelTDwp(IBelTBlockOld block)=> new BelTDwp(block);
+    public static IBelTAeadOld BelTDwp(IBelTBlockOld block)=> new BelTDwpOld(block);
 }

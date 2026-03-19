@@ -1,57 +1,91 @@
-﻿namespace BelTCrypto.Tests;
+﻿using BelTCrypto.Core;
+using BelTCrypto.Core.Factories;
+using BelTCrypto.Core.Interfaces;
+
+namespace BelTCrypto.Tests;
 
 [TestFixture]
 public class BelTDwpTests
 {
-    // Тестовые векторы из А.19 (в формате СТБ)
-    private const string K_HEX = "E9DEE72C8F0C0FA62DDB49F46F73964706075316ED247A3739CBA38303A98BF6";
-    private const string S_HEX = "BE32971343FC9A48A02A885F194B09A1";
-    private const string I_HEX = "8504FA9D1BB6C7AC252E72C202FDCE0D5BE3D61217B96181FE6786AD716B890B";
+    private IAuthenticatedEncryption _dwp;
 
+    [SetUp]
+    public void Setup() => _dwp = BelTAuthenticatedFactory.Create(BelTAuthenticatedFactory.BeltAeadScheme.Dwp);
 
     [Test]
-    public void BeltDwp_Protect_TableA19_Test()
-    {
-    // Результаты А.19
-    const string X_HEX = "B194BAC80A08F53B366D008E584A5DE4";
-    const string Y_EXPECTED = "52C9AF96FF50F64435FC43DEF56BD797";
-    const string T_EXPECTED = "3B2E0AEB2B91854B";
-    byte[] K = Convert.FromHexString(K_HEX);
-        byte[] S = Convert.FromHexString(S_HEX);
-        byte[] I = Convert.FromHexString(I_HEX);
-        byte[] X = Convert.FromHexString(X_HEX);
+    public void Protect_TableA19_Success()
+    {        
+        // Данные из таблицы А.19
+        byte[] i = Core.BelTMath.H[16..48];
 
-        using var belt = new BelTCrypto.Net.BeltAead(K, BelTCrypto.Net.BeltAeadScheme.Dwp);
+        byte[] k = Core.BelTMath.H[128..160];
 
-        byte[] actualY = new byte[X.Length];
-        byte[] actualT = new byte[8];
+        byte[] s = Core.BelTMath.H[192..208];
 
-        belt.Encrypt(S, X, actualY, actualT, I);
+        byte[] x = Core.BelTMath.H[..16];
 
-        Assert.Multiple(() =>
+        byte[] expectedY = [
+            0x52, 0xC9, 0xAF, 0x96, 0xFF, 0x50, 0xF6, 0x44,
+            0x35, 0xFC, 0x43, 0xDE, 0xF5, 0x6B, 0xD7, 0x97
+        ];
+
+        byte[] expectedT = [
+            0x3B, 0x2E, 0x0A, 0xEB, 0x2B, 0x91, 0x85, 0x4B
+        ];
+
+        // Выделяем буферы под результат
+        Span<byte> actualY = new byte[x.Length];
+        Span<byte> actualT = new byte[8];
+
+        _dwp.Protect(x, i, k, s, actualY, actualT);
+
+        // Логируем для отладки
+        TestContext.Out.WriteLine($"Actual Y:   {BitConverter.ToString(actualY.ToArray())}");
+        TestContext.Out.WriteLine($"Expected Y: {BitConverter.ToString(expectedY)}");
+        TestContext.Out.WriteLine($"Actual T:   {BitConverter.ToString(actualT.ToArray())}");
+        TestContext.Out.WriteLine($"Expected T: {BitConverter.ToString(expectedT)}");
+
+        using (Assert.EnterMultipleScope())
         {
-            Assert.That(Convert.ToHexString(actualY), Is.EqualTo(Y_EXPECTED), "Шифртекст Y не совпадает");
-            Assert.That(Convert.ToHexString(actualT), Is.EqualTo(T_EXPECTED), "Имитовставка T не совпадает");
-        });
+            // Проверки
+            Assert.That(actualY.ToArray(), Is.EqualTo(expectedY).AsCollection, "Шифртекст Y не совпал.");
+            Assert.That(actualT.ToArray(), Is.EqualTo(expectedT).AsCollection, "Имитовставка T не совпала.");
+        }
     }
 
     [Test]
-    public void BeltDwp_Unprotect_TableA20_Test()
+    public void Unprotect_TableA20_ShouldRestoreOriginalX()
     {
-        // Данные из таблицы А.20
-        byte[] K = Convert.FromHexString(K_HEX);
-        byte[] S = Convert.FromHexString(S_HEX);
-        byte[] I = Convert.FromHexString(I_HEX);
+        // 1. Исходные данные из таблицы А.20
+        byte[] i = Core.BelTMath.H[80..112];
+        byte[] k = Core.BelTMath.H[160..192];
+        byte[] s = Core.BelTMath.H[208..224];
+        byte[] y = Core.BelTMath.H[64..80];
+        byte[] t = [
+            0x6A, 0x2C, 0x2C, 0x94, 0xC4, 0x15, 0x0D, 0xC0
+        ];
 
-        byte[] Y = Convert.FromHexString("E12BDC1AE28257EC703FCCF095EE8DF1");
-        byte[] T = Convert.FromHexString("6A2C2C94C4150DC0");
-        string expectedX = "DF181ED008A20F43DCBBB93650DAD34B";
+        // Ожидаемый результат
+        byte[] expectedX = [
+            0xDF, 0x18, 0x1E, 0xD0, 0x08, 0xA2, 0x0F, 0x43,
+            0xDC, 0xBB, 0xB9, 0x36, 0x50, 0xDA, 0xD3, 0x4B
+        ];
 
-        using var belt = new BelTCrypto.Net.BeltAead(K, BelTCrypto.Net.BeltAeadScheme.Dwp);
-        byte[] actualX = new byte[Y.Length];
+        // 2. Буфер для результата
+        Span<byte> actualX = stackalloc byte[y.Length];
 
-        belt.Decrypt(S, Y, T, actualX, I);
+        // 3. Выполнение снятия защиты
+        bool isValid = _dwp.Unprotect(y, i, t, k, s, actualX);
 
-        Assert.That(Convert.ToHexString(actualX), Is.EqualTo(expectedX));
+        // Логируем для отладки
+        TestContext.Out.WriteLine($"Actual X:   {BitConverter.ToString(actualX.ToArray())}");
+        TestContext.Out.WriteLine($"Expected X: {BitConverter.ToString(expectedX)}");
+        // 4. Проверки
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(isValid, Is.True, "Имитовставка T должна быть признана верной.");
+            Assert.That(actualX.ToArray(), Is.EqualTo(expectedX),
+                "Расшифрованные данные X не совпадают с эталоном из таблицы А.20.");
+        }
     }
 }

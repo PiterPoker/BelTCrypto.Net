@@ -1,137 +1,200 @@
-﻿using BelTCrypto.Core.Abstractions;
-using BelTCrypto.Core.Interfaces.Old;
-using BelTCrypto.Core.Old;
+﻿using BelTCrypto.Core.Interfaces;
 using System.Buffers.Binary;
 using System.Security.Cryptography;
 
 namespace BelTCrypto.Core;
 
-internal sealed class BelTDwp(IBelTBlockOld block) : BelTAead(block)
+internal class BelTDwp : IBelTDwp
 {
-    // Первая строка Таблицы 2 (индексы 0..15)
-    private static readonly byte[] T_INIT = BelTMathOld.SBoxH[..16];
+    private readonly IBelTBlock _block;
 
-    public override (byte[] CipherText, byte[] Tag) Protect(
-        ReadOnlySpan<byte> message,
-        ReadOnlySpan<byte> associatedData,
-        ReadOnlySpan<byte> iv)
+    public BelTDwp(IBelTBlock block)
     {
-        // 1. Установка
-        byte[] s = new byte[16];
-        _block.Encrypt(iv, s);
-        byte[] r = new byte[16];
-        _block.Encrypt(s, r);
-        byte[] t = (byte[])T_INIT.Clone();
-
-        // 2. Имитовставка от ассоциированных данных (Шаг 3)
-        UpdateTag(t, r, associatedData);
-
-        // 3. Шифрование (гаммирование) (Шаг 4)
-        byte[] y = new byte[message.Length];
-        byte[] s_gamma = (byte[])s.Clone();
-        byte[] gamma = new byte[16];
-        for (int i = 0; i < message.Length; i += 16)
-        {
-            int chunkSize = Math.Min(16, message.Length - i);
-            BelTMathOld.Increment128(s_gamma);
-            _block.Encrypt(s_gamma, gamma);
-            for (int j = 0; j < chunkSize; j++)
-                y[i + j] = (byte)(message[i + j] ^ gamma[j]);
-        }
-
-        // 4. Имитовставка от шифртекста (Шаг 4.3)
-        UpdateTag(t, r, y);
-
-        // 5. Финализация имитовставки (Шаги 5-6)
-        FinalizeTag(t, r, associatedData.Length, message.Length);
-
-        byte[] tag = new byte[8];
-        t.AsSpan(0, 8).CopyTo(tag);
-        return (y, tag);
+        _block = block;
     }
-
-    public override byte[] Unprotect(ReadOnlySpan<byte> cipherText, ReadOnlySpan<byte> associatedData, ReadOnlySpan<byte> iv, ReadOnlySpan<byte> tag)
+    public void Protect(ReadOnlySpan<byte> x, ReadOnlySpan<byte> i, ReadOnlySpan<byte> key, ReadOnlySpan<byte> s, Span<byte> y, Span<byte> t)
     {
-        // 1. Установка (Шаг 2)
-        byte[] s = new byte[16];
-        _block.Encrypt(iv, s);
-        byte[] r = new byte[16];
-        _block.Encrypt(s, r);
+        if (t.Length < 8) throw new ArgumentException("T must be 64 bits.");
+        if (y.Length != x.Length) throw new ArgumentException("Output buffer Y must match input X length.");
 
-        byte[] t = (byte[])T_INIT.Clone();
+        // Секретные регистры в стеке
+        Span<byte> rReg = stackalloc byte[16];
+        Span<byte> sReg = stackalloc byte[16];
+        Span<byte> tReg = stackalloc byte[16];
 
-        // 2. Имитовставка от AD (Шаг 3)
-        UpdateTag(t, r, associatedData);
-
-        // 3. Имитовставка от CipherText (Шаг 4.3)
-        UpdateTag(t, r, cipherText);
-
-        // 4. Блок длин (Шаг 5)
-        Span<byte> lengths = stackalloc byte[16];
-        // СТБ требует длину в битах (длина в байтах * 8)
-        BinaryPrimitives.WriteUInt64LittleEndian(lengths[0..8], (ulong)associatedData.Length * 8);
-        BinaryPrimitives.WriteUInt64LittleEndian(lengths[8..16], (ulong)cipherText.Length * 8);
-
-        for (int i = 0; i < 16; i++) t[i] ^= lengths[i];
-
-        // 5. Финализация (Шаг 6)
-        BelTMathOld.MultiplyGF128(t, r);
-        _block.Encrypt(t, t);
-
-        // 6. Проверка (Шаг 7) - берем первые 8 байт (64 бита) [cite: 106]
-        if (!t.AsSpan(0, 8).SequenceEqual(tag))
-            throw new CryptographicException("⊥");
-
-        // 7. Расшифрование (Шаг 8)
-        byte[] message = new byte[cipherText.Length];
-        byte[] s_gamma = (byte[])s.Clone();
-        byte[] gamma = new byte[16];
-        for (int i = 0; i < cipherText.Length; i += 16)
+        try
         {
-            int chunkSize = Math.Min(16, cipherText.Length - i);
-            BelTMathOld.Increment128(s_gamma);
-            _block.Encrypt(s_gamma, gamma);
-            for (int j = 0; j < chunkSize; j++)
-                message[i + j] = (byte)(cipherText[i + j] ^ gamma[j]);
+            // 2) Инициализация
+            _block.Encrypt(s, key, sReg);      // s = belt-block(S, K)
+            _block.Encrypt(sReg, key, rReg);   // r = belt-block(s, K)
+
+            // Инициализация t константой H[0..15]
+            BelTMath.H.AsSpan(0, 16).CopyTo(tReg);
+
+            // 3) Обработка ассоциированных данных I
+            UpdateAeadHash(i, rReg, tReg);
+
+            // 4) Шифрование X -> Y и одновременное хеширование Y
+            EncryptAndHash(x, y, key, rReg, sReg, tReg);
+
+            // 5-6) Финализация имитовставки (длины + финальный belt-block)
+            FinalizeTag(i.Length, x.Length, key, rReg, tReg);
+
+            // 7) T = Lo(t, 64)
+            tReg[..8].CopyTo(t);
         }
-        return message;
-    }
-
-    private void UpdateTag(byte[] t, byte[] r, ReadOnlySpan<byte> data)
-    {
-        if (data.IsEmpty) return;
-
-        Span<byte> blockBuf = stackalloc byte[16];
-        for (int i = 0; i < data.Length; i += 16)
+        finally
         {
-            int chunkSize = Math.Min(16, data.Length - i);
-
-            blockBuf.Clear(); // Обязательно обнуляем!
-            data.Slice(i, chunkSize).CopyTo(blockBuf);
-
-            // 1. XOR t = t ⊕ (блок данных)
-            for (int j = 0; j < 16; j++)
-                t[j] ^= blockBuf[j];
-
-            // 2. Умножение t = t * r
-            BelTMathOld.MultiplyGF128(t, r);
+            CryptographicOperations.ZeroMemory(rReg);
+            CryptographicOperations.ZeroMemory(sReg);
+            CryptographicOperations.ZeroMemory(tReg);
         }
     }
 
-    private void FinalizeTag(byte[] t, byte[] r, long adLen, long msgLen)
+    public bool Unprotect(ReadOnlySpan<byte> y, ReadOnlySpan<byte> i, ReadOnlySpan<byte> t, ReadOnlySpan<byte> key, ReadOnlySpan<byte> s, Span<byte> x)
     {
-        Span<byte> lengths = stackalloc byte[16];
-        // Длины в битах, Little-Endian
-        BinaryPrimitives.WriteUInt64LittleEndian(lengths[0..8], (ulong)adLen * 8);
-        BinaryPrimitives.WriteUInt64LittleEndian(lengths[8..16], (ulong)msgLen * 8);
+        if (t.Length != 8) return false;
+        if (x.Length != y.Length) return false;
 
-        // XOR с блоком длин
-        for (int i = 0; i < 16; i++) t[i] ^= lengths[i];
+        Span<byte> rReg = stackalloc byte[16];
+        Span<byte> sReg = stackalloc byte[16];
+        Span<byte> tReg = stackalloc byte[16];
 
-        // t = t * r
-        BelTMathOld.MultiplyGF128(t, r);
+        try
+        {
+            // 2) Инициализация
+            _block.Encrypt(s, key, sReg);
+            _block.Encrypt(sReg, key, rReg);
+            BelTMath.H.AsSpan(0, 16).CopyTo(tReg);
 
-        // Финальное шифрование блока
-        _block.Encrypt(t, t);
+            // 3-4) Накопление хеша от I и Y
+            UpdateAeadHash(i, rReg, tReg);
+            UpdateAeadHash(y, rReg, tReg);
+
+            // 5-6) Финализация
+            FinalizeTag(i.Length, y.Length, key, rReg, tReg);
+
+            // 7) Проверка имитовставки в константное время
+            if (!CryptographicOperations.FixedTimeEquals(t, tReg[..8]))
+            {
+                x.Clear(); // Не выдаем мусор при ошибке
+                return false;
+            }
+
+            // 8) Расшифрование (только если T верно)
+            // Восстанавливаем начальное состояние гаммы
+            _block.Encrypt(s, key, sReg);
+            Decrypt(y, x, key, sReg);
+
+            return true;
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(rReg);
+            CryptographicOperations.ZeroMemory(sReg);
+            CryptographicOperations.ZeroMemory(tReg);
+        }
+    }
+
+    private void UpdateAeadHash(ReadOnlySpan<byte> data, ReadOnlySpan<byte> r, Span<byte> t)
+    {
+        int n = (data.Length + 15) / 16;
+        Span<byte> block = stackalloc byte[16];
+
+        try
+        {
+            for (int j = 0; j < n; j++)
+            {
+                int offset = j * 16;
+                int len = Math.Min(16, data.Length - offset);
+
+                block.Clear();
+                data.Slice(offset, len).CopyTo(block);
+
+                BelTMath.GfBlock.Xor(t, block);
+                BelTMath.GfBlock.Multiply(t, r);
+            }
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(block);
+        }
+    }
+
+    private void EncryptAndHash(ReadOnlySpan<byte> x, Span<byte> y, ReadOnlySpan<byte> key, ReadOnlySpan<byte> r, Span<byte> s, Span<byte> t)
+    {
+        int n = (x.Length + 15) / 16;
+        Span<byte> gamma = stackalloc byte[16];
+        Span<byte> yiFull = stackalloc byte[16];
+
+        try
+        {
+            for (int j = 0; j < n; j++)
+            {
+                BelTMath.Block.Increment(s);
+                _block.Encrypt(s, key, gamma);
+
+                int offset = j * 16;
+                int len = Math.Min(16, x.Length - offset);
+
+                for (int k = 0; k < len; k++)
+                    y[offset + k] = (byte)(x[offset + k] ^ gamma[k]);
+
+                yiFull.Clear();
+                y.Slice(offset, len).CopyTo(yiFull);
+                BelTMath.GfBlock.Xor(t, yiFull);
+                BelTMath.GfBlock.Multiply(t, r);
+            }
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(gamma);
+            CryptographicOperations.ZeroMemory(yiFull);
+        }
+    }
+
+    private void FinalizeTag(int iLen, int xLen, ReadOnlySpan<byte> key, ReadOnlySpan<byte> r, Span<byte> t)
+    {
+        Span<byte> lengthsBlock = stackalloc byte[16];
+        try
+        {
+            BinaryPrimitives.WriteUInt64LittleEndian(lengthsBlock[..8], (ulong)iLen * 8);
+            BinaryPrimitives.WriteUInt64LittleEndian(lengthsBlock[8..], (ulong)xLen * 8);
+
+            BelTMath.GfBlock.Xor(t, lengthsBlock);
+
+            // Шаг 6: t = belt-block(t * r, K)
+            BelTMath.GfBlock.Multiply(t, r);
+            _block.Encrypt(t, key, t);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(lengthsBlock);
+        }
+    }
+
+    private void Decrypt(ReadOnlySpan<byte> y, Span<byte> x, ReadOnlySpan<byte> key, Span<byte> s)
+    {
+        int n = (y.Length + 15) / 16;
+        Span<byte> gamma = stackalloc byte[16];
+
+        try
+        {
+            for (int j = 0; j < n; j++)
+            {
+                BelTMath.Block.Increment(s);
+                _block.Encrypt(s, key, gamma);
+
+                int offset = j * 16;
+                int len = Math.Min(16, y.Length - offset);
+
+                for (int k = 0; k < len; k++)
+                    x[offset + k] = (byte)(y[offset + k] ^ gamma[k]);
+            }
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(gamma);
+        }
     }
 }
