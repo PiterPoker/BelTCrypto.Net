@@ -1,4 +1,4 @@
-﻿using BelTCrypto.Core;
+﻿using BelTCrypto.Core.Old;
 using System.Security.Cryptography;
 
 namespace BelTCrypto.Tests.Old;
@@ -21,8 +21,8 @@ public class BelTCbcEncryptOldTests
         byte[] x = StringToByteArray("B194BAC80A08F53B366D008E584A5DE48504FA9D1BB6C7AC252E72C202FDCE0D5BE3D61217B96181FE6786AD716B890B");
         string expectedY = "10116EFAE6AD58EE14852E11DA1B8A745CF2480E8D03F1C19492E53ED3A70F60657C1EE8C0E0AE5B58388BF8A68E3309";
 
-        var block = BeltHash.BelTBlock(key);
-        var transform = BeltHash.BelTCbcEncryptTransform(block, s);
+        var block = BeltHashOld.BelTBlock(key);
+        var transform = BeltHashOld.BelTCbcEncryptTransform(block, s);
 
         // 3. Шифрование через поток
         using var msInput = new MemoryStream(x);
@@ -51,8 +51,8 @@ public class BelTCbcEncryptOldTests
         string expectedY = "10116EFAE6AD58EE14852E11DA1B8A746A9BBADCAF73F968F875DEDC0A44F6B15CF2480E";
 
 
-        var block = BeltHash.BelTBlock(key);
-        var transform = BeltHash.BelTCbcEncryptTransform(block, s);
+        var block = BeltHashOld.BelTBlock(key);
+        var transform = BeltHashOld.BelTCbcEncryptTransform(block, s);
 
         // 3. Шифрование через поток
         using var msInput = new MemoryStream(x);

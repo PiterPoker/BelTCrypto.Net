@@ -1,4 +1,4 @@
-﻿using BelTCrypto.Core;
+﻿using BelTCrypto.Core.Old;
 
 namespace BelTCrypto.Tests.Old;
 
@@ -13,7 +13,7 @@ public class BelTBlockOldTests
         byte[] x = StringToByteArray("B194BAC80A08F53B366D008E584A5DE4");
         byte[] expectedY = StringToByteArray("69CCA1C93557C9E3D66BC3E0FA88FA6E");
 
-        var engine = BeltHash.BelTBlock(key);
+        var engine = BeltHashOld.BelTBlock(key);
         Span<byte> actualY = stackalloc byte[16];
         engine.Encrypt(x, actualY);
 
@@ -28,7 +28,7 @@ public class BelTBlockOldTests
         byte[] y = StringToByteArray("E12BDC1AE28257EC703FCCF095EE8DF1");
         byte[] expectedX = StringToByteArray("0DC5300600CAB840B38448E5E993F421");
 
-        var engine = BeltHash.BelTBlock(key);
+        var engine = BeltHashOld.BelTBlock(key);
         Span<byte> actualX = stackalloc byte[16];
         engine.Decrypt(y, actualX);
 

@@ -1,4 +1,4 @@
-﻿using BelTCrypto.Core;
+﻿using BelTCrypto.Core.Old;
 
 namespace BelTCrypto.Tests.Old;
 
@@ -12,8 +12,8 @@ public class BelTCompressOldTests
         string expectedS = "46FE7425C9B181EB41DFEE3E72163D5A";
         string expectedY = "ED2F5481D593F40D87FCE37D6BC1A2E1B7D1A2CC975C82D3C0497488C90D99D8";
 
-        var engine = BeltHash.BelTBlock();
-        var beltCompress = BeltHash.BelTCompress(engine);
+        var engine = BeltHashOld.BelTBlock();
+        var beltCompress = BeltHashOld.BelTCompress(engine);
         var (S, Y) = beltCompress.Compress(x);
 
         Assert.Multiple(() =>

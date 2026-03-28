@@ -1,4 +1,4 @@
-﻿using BelTCrypto.Core;
+﻿using BelTCrypto.Core.Old;
 
 namespace BelTCrypto.Tests.Old;
 
@@ -13,8 +13,8 @@ public class BelTWideBlockOldTests
         byte[] expectedY = StringToByteArray("49A38EE108D6C742E52B774F00A6EF98B106CBD13EA4FB0680323051BC04DF76E487B055C69BCF541176169F1DC9F6C8");
 
         byte[] actualY = new byte[x.Length];
-        var engine = BeltHash.BelTBlock(key);
-        var wideBlock = BeltHash.BelTWideBlock(engine);
+        var engine = BeltHashOld.BelTBlock(key);
+        var wideBlock = BeltHashOld.BelTWideBlock(engine);
         wideBlock.Encrypt(x, actualY);
 
         Assert.That(Convert.ToHexString(actualY), Is.EqualTo(Convert.ToHexString(expectedY)));
@@ -29,8 +29,8 @@ public class BelTWideBlockOldTests
         byte[] expectedY = StringToByteArray("F08EF22DCAA06C81FB12721974221CA7AB82C62856FCF2F9FCA006E019A28F16E5821A51F573594625DBAB8F6A5C94");
 
         byte[] actualY = new byte[expectedY.Length];
-        var engine = BeltHash.BelTBlock(key);
-        var wideBlock = BeltHash.BelTWideBlock(engine);
+        var engine = BeltHashOld.BelTBlock(key);
+        var wideBlock = BeltHashOld.BelTWideBlock(engine);
 
         // Если X короче Y, нам нужно понять логику дополнения в стандарте
         // Пока пробуем как есть (если x.Length == 32)
@@ -48,8 +48,8 @@ public class BelTWideBlockOldTests
         byte[] expectedX = StringToByteArray("92632EE0C21AD9E09A39343E5C07DAA4889B03F2E6847EB152EC99F7A4D9F154B5EF68D8E4A39E567153DE13D72254EE");
 
         byte[] actualX = new byte[y.Length];
-        var engine = BeltHash.BelTBlock(key);
-        var wideBlock = BeltHash.BelTWideBlock(engine);
+        var engine = BeltHashOld.BelTBlock(key);
+        var wideBlock = BeltHashOld.BelTWideBlock(engine);
 
         wideBlock.Decrypt(y, actualX);
 
@@ -65,8 +65,8 @@ public class BelTWideBlockOldTests
         byte[] expectedX = StringToByteArray("DF3F882230BAAFFC92F05660321172310E3CB2182681EF43102E67175E177BD75E93E4E8");
 
         byte[] actualX = new byte[y.Length];
-        var engine = BeltHash.BelTBlock(key);
-        var wideBlock = BeltHash.BelTWideBlock(engine);
+        var engine = BeltHashOld.BelTBlock(key);
+        var wideBlock = BeltHashOld.BelTWideBlock(engine);
 
         wideBlock.Decrypt(y, actualX);
 

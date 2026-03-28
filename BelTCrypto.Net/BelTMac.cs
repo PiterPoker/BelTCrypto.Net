@@ -1,5 +1,5 @@
-﻿using BelTCrypto.Core;
-using BelTCrypto.Core.Interfaces.Old;
+﻿using BelTCrypto.Core.Interfaces.Old;
+using BelTCrypto.Core.Old;
 using System.Security.Cryptography;
 
 namespace BelTCrypto.Net;
@@ -13,8 +13,8 @@ public sealed class BelTMac : KeyedHashAlgorithm
     public BelTMac(byte[] key)
     {
         // Используем твою фабрику из Core
-        var block = BeltHash.BelTBlock(key);
-        _engine = BeltHash.BelTMac(block);
+        var block = BeltHashOld.BelTBlock(key);
+        _engine = BeltHashOld.BelTMac(block);
         HashSizeValue = 64;
     }
 

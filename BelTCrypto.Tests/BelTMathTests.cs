@@ -1,4 +1,4 @@
-﻿using BelTCrypto.Core;
+﻿using BelTCrypto.Core.Old;
 using BelTCrypto.Net;
 
 namespace BelTCrypto.Tests;
@@ -12,7 +12,7 @@ public class BelTMathTests
         // Пример из стандарта: H(A2) = 9B
         byte input = 0xA2;
         byte expected = 0x9B;
-        Assert.That(BeltHash.SubstituteH(input), Is.EqualTo(expected));
+        Assert.That(BeltHashOld.SubstituteH(input), Is.EqualTo(expected));
     }
 
     [Test]
@@ -22,7 +22,7 @@ public class BelTMathTests
         uint value = 0xB194BAC8;
         // В стандарте RotHi определен как циклический сдвиг влево
         uint expected = (value << 1) | (value >> 31);
-        Assert.That(BeltHash.RotHi(value, 1), Is.EqualTo(expected));
+        Assert.That(BeltHashOld.RotHi(value, 1), Is.EqualTo(expected));
     }
 
     [Test]
@@ -37,7 +37,7 @@ public class BelTMathTests
         // Ожидаемый u*v: 0001D107 FC67DE40 04DC2C80 3DFD95C3
         byte[] expected = [.. Convert.FromHexString("0001D107FC67DE4004DC2C803DFD95C3")];
 
-        BeltHash.MultiplyGF128(u, v);
+        BeltHashOld.MultiplyGF128(u, v);
 
         Assert.That(u, Is.EqualTo(expected), "Ошибка в первом примере умножения А.18");
 
@@ -46,7 +46,7 @@ public class BelTMathTests
         byte[] v2 = [.. Convert.FromHexString("2055704E2EDB48FE87E74075A5E77EB1")];
         byte[] expected2 = [.. Convert.FromHexString("4A5C95938B3FE8F674D59BC1EB356079")];
 
-        BeltHash.MultiplyGF128(u2, v2);
+        BeltHashOld.MultiplyGF128(u2, v2);
 
         Assert.That(u2, Is.EqualTo(expected2), "Ошибка во втором примере умножения А.18");
     }

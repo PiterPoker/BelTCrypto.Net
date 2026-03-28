@@ -1,5 +1,5 @@
-﻿using BelTCrypto.Core;
-using BelTCrypto.Core.Interfaces.Old;
+﻿using BelTCrypto.Core.Interfaces.Old;
+using BelTCrypto.Core.Old;
 using System.Security.Cryptography;
 
 namespace BelTCrypto.Net;
@@ -30,10 +30,10 @@ public class BelTAlgorithm : SymmetricAlgorithm
         // Вот здесь происходит переключение режимов
         return Mode switch
         {
-            CipherMode.ECB => BeltHash.BelTEcbEncryptTransform(block),
-            CipherMode.CBC => BeltHash.BelTCbcEncryptTransform(block, rgbIV ?? IV),
-            CipherMode.CFB => BeltHash.BelTCfbEncryptTransform(block, rgbIV ?? IV),
-            BelTModes.CTR => BeltHash.BelTCtrTransform(block, rgbIV ?? IV),
+            CipherMode.ECB => BeltHashOld.BelTEcbEncryptTransform(block),
+            CipherMode.CBC => BeltHashOld.BelTCbcEncryptTransform(block, rgbIV ?? IV),
+            CipherMode.CFB => BeltHashOld.BelTCfbEncryptTransform(block, rgbIV ?? IV),
+            BelTModes.CTR => BeltHashOld.BelTCtrTransform(block, rgbIV ?? IV),
             // Сюда потом добавим CTR, CFB и т.д.
             _ => throw new CryptographicException($"Режим {Mode} не поддерживается для BelT")
         };
@@ -62,10 +62,10 @@ public class BelTAlgorithm : SymmetricAlgorithm
 
         return Mode switch
         {
-            CipherMode.ECB => BeltHash.BelTEcbDecryptTransform(block),
-            CipherMode.CBC => BeltHash.BelTCbcDecryptTransform(block, rgbIV ?? IV),
-            CipherMode.CFB => BeltHash.BelTCfbDecryptTransform(block, rgbIV ?? IV),
-            BelTModes.CTR => BeltHash.BelTCtrTransform(block, rgbIV ?? IV),
+            CipherMode.ECB => BeltHashOld.BelTEcbDecryptTransform(block),
+            CipherMode.CBC => BeltHashOld.BelTCbcDecryptTransform(block, rgbIV ?? IV),
+            CipherMode.CFB => BeltHashOld.BelTCfbDecryptTransform(block, rgbIV ?? IV),
+            BelTModes.CTR => BeltHashOld.BelTCtrTransform(block, rgbIV ?? IV),
             _ => throw new CryptographicException($"Режим {Mode} не поддерживается для BelT")
         };
     }

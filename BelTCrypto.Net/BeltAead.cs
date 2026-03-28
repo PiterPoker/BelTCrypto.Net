@@ -1,5 +1,5 @@
-﻿using BelTCrypto.Core;
-using BelTCrypto.Core.Interfaces.Old;
+﻿using BelTCrypto.Core.Interfaces.Old;
+using BelTCrypto.Core.Old;
 using System.Security.Cryptography;
 
 namespace BelTCrypto.Net;
@@ -15,11 +15,11 @@ public sealed class BeltAead : IDisposable
         if (key.Length != 32) throw new ArgumentException("Ключ BelT должен быть 256 бит (32 байта).");
 
         // Инициализируем Core-движок через нашу фабрику
-        var block = BeltHash.BelTBlock(key); // Твой класс реализации блочного шифра
+        var block = BeltHashOld.BelTBlock(key); // Твой класс реализации блочного шифра
 
         _engine = scheme switch
         {
-            BeltAeadScheme.Dwp => BeltHash.BelTDwp(block),
+            BeltAeadScheme.Dwp => BeltHashOld.BelTDwp(block),
             // BelTChe добавим позже
             _ => throw new NotSupportedException($"Схема {scheme} еще не реализована.")
         };
