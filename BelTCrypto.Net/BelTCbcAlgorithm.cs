@@ -1,5 +1,5 @@
-﻿using BelTCrypto.Core;
-using BelTCrypto.Core.Interfaces.Old;
+﻿using BelTCrypto.Core.Interfaces.Old;
+using BelTCrypto.Core.Old;
 using System.Security.Cryptography;
 
 namespace BelTCrypto.Net;
@@ -31,7 +31,7 @@ public sealed class BelTCbcAlgorithm : SymmetricAlgorithm
             throw new ArgumentException("IV must be 128 bits", nameof(rgbIV));
 
         var block = _blockFactory(rgbKey);
-        return BeltHash.BelTCbcEncryptTransform(block, rgbIV);
+        return BeltHashOld.BelTCbcEncryptTransform(block, rgbIV);
     }
 
     public override ICryptoTransform CreateDecryptor(byte[] rgbKey, byte[]? rgbIV)
@@ -40,7 +40,7 @@ public sealed class BelTCbcAlgorithm : SymmetricAlgorithm
             throw new ArgumentException("IV must be 128 bits", nameof(rgbIV));
 
         var block = _blockFactory(rgbKey);
-        return BeltHash.BelTCbcDecryptTransform(block, rgbIV);
+        return BeltHashOld.BelTCbcDecryptTransform(block, rgbIV);
     }
 
     // Эти методы обязательны для реализации абстрактного класса

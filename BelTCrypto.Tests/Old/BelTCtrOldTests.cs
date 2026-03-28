@@ -1,4 +1,4 @@
-﻿using BelTCrypto.Core;
+﻿using BelTCrypto.Core.Old;
 using BelTCrypto.Net;
 using System.Security.Cryptography;
 
@@ -22,7 +22,7 @@ public class BelTCtrOldTests
         // Ожидаемый Y из таблицы А.15
         string expectedY = "52C9AF96FF50F64435FC43DEF56BD797D5B5B1FF79FB41257AB9CDF6E63E81F8F00341473EAE409833622DE05213773A";
 
-        using var algo = new BelTAlgorithm(k => BeltHash.BelTBlock(k));
+        using var algo = new BelTAlgorithm(k => BeltHashOld.BelTBlock(k));
         algo.Mode = CTR;
         algo.Padding = PaddingMode.None;
 
@@ -45,7 +45,7 @@ public class BelTCtrOldTests
         // Ожидаемый X из таблицы А.16
         string expectedX = "DF181ED008A20F43DCBBB93650DAD34B389CDEE5826D40E2D4BD80F49A93F5D212F6333166456F169043CC5F";
 
-        using var algo = new BelTAlgorithm(k => BeltHash.BelTBlock(k));
+        using var algo = new BelTAlgorithm(k => BeltHashOld.BelTBlock(k));
         algo.Mode = CTR;
 
         // В CTR дешифратор создается точно так же, как шифратор

@@ -1,4 +1,4 @@
-﻿using BelTCrypto.Core;
+﻿using BelTCrypto.Core.Old;
 using BelTCrypto.Net;
 using System.Security.Cryptography;
 
@@ -25,7 +25,7 @@ public class BelTCfbOldTests
         string expectedY = "C31E490A90EFA374626CC99E4B7B8540A6E48685464A5A06849C9CA769A1B0AE55C2CC5939303EC832DD2FE16C8E5A1B";
 
         // Настраиваем алгоритм
-        using var algo = new BelTAlgorithm(k => BeltHash.BelTBlock(k));
+        using var algo = new BelTAlgorithm(k => BeltHashOld.BelTBlock(k));
         algo.Mode = CipherMode.CFB;
         algo.Padding = PaddingMode.None;
 
@@ -47,7 +47,7 @@ public class BelTCfbOldTests
         byte[] y = Convert.FromHexString("E12BDC1AE28257EC703FCCF095EE8DF1C1AB76389FE678CAF7C6F860D5BB9C4FF33C657B637C306ADD4EA7799EB23D31");
         string expectedX = "FA9D107A86F375EE65CD1DB881224BD016AFF814938ED39B3361ABB0BF0851B652244EB06842DD4C94AA4500774E40BB";
 
-        using var algo = new BelTAlgorithm(k => BeltHash.BelTBlock(k));
+        using var algo = new BelTAlgorithm(k => BeltHashOld.BelTBlock(k));
         algo.Mode = CipherMode.CFB;
 
         using var decryptor = algo.CreateDecryptor(key, s);

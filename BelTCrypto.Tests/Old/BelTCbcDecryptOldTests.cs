@@ -1,5 +1,5 @@
-﻿using BelTCrypto.Core;
-using BelTCrypto.Core.Interfaces.Old;
+﻿using BelTCrypto.Core.Interfaces.Old;
+using BelTCrypto.Core.Old;
 using System.Security.Cryptography;
 
 namespace BelTCrypto.Tests.Old;
@@ -10,7 +10,7 @@ public class BelTCbcDecryptOldTests
     // Вспомогательный метод для расшифрования через стандартные потоки
     private byte[] DecryptThroughStream(IBelTBlockOld block, byte[] iv, byte[] ciphertext)
     {
-        using var decryptor = BeltHash.BelTCbcDecryptTransform(block, iv);
+        using var decryptor = BeltHashOld.BelTCbcDecryptTransform(block, iv);
         using var msInput = new MemoryStream(ciphertext);
         using var msOutput = new MemoryStream();
 
@@ -32,7 +32,7 @@ public class BelTCbcDecryptOldTests
         byte[] y = Convert.FromHexString("E12BDC1AE28257EC703FCCF095EE8DF1C1AB76389FE678CAF7C6F860D5BB9C4FF33C657B637C306ADD4EA7799EB23D31");
         string expectedX = "730894D6158E17CC1600185A8F411CAB0471FF85C83792398D8924EBD57D03DB95B97A9B7907E4B020960455E46176F8";
 
-        var block = BeltHash.BelTBlock(key);
+        var block = BeltHashOld.BelTBlock(key);
         byte[] actualX = DecryptThroughStream(block, s, y);
 
         Assert.That(Convert.ToHexString(actualX), Is.EqualTo(expectedX), "Расшифрование полных блоков (48 байт) не совпало.");
@@ -51,7 +51,7 @@ public class BelTCbcDecryptOldTests
         // X = 36 байт
         string expectedX = "730894D6158E17CC1600185A8F411CABB6AB7AF8541CF85755B8EA27239F08D2166646E4";
 
-        var block = BeltHash.BelTBlock(key);
+        var block = BeltHashOld.BelTBlock(key);
         byte[] actualX = DecryptThroughStream(block, s, y);
 
         using (Assert.EnterMultipleScope())

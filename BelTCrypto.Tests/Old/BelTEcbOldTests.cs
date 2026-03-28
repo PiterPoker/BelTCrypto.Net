@@ -1,4 +1,4 @@
-﻿using BelTCrypto.Core;
+﻿using BelTCrypto.Core.Old;
 
 namespace BelTCrypto.Tests.Old;
 
@@ -16,8 +16,8 @@ public class BelTEcbOldTests
         byte[] x = StringToByteArray("B194BAC80A08F53B366D008E584A5DE48504FA9D1BB6C7AC252E72C202FDCE0D5BE3D61217B96181FE6786AD716B890B");
         string expectedY = "69CCA1C93557C9E3D66BC3E0FA88FA6E5F23102EF109710775017F73806DA9DC46FB2ED2CE771F26DCB5E5D1569F9AB0";
 
-        using var block = BeltHash.BelTBlock(key);
-        using var encryptor = BeltHash.BelTEcbEncryptTransform(block);
+        using var block = BeltHashOld.BelTBlock(key);
+        using var encryptor = BeltHashOld.BelTEcbEncryptTransform(block);
 
         // ICryptoTransform: используем TransformFinalBlock для получения результата целиком
         byte[] actualY = encryptor.TransformFinalBlock(x, 0, x.Length);
@@ -34,8 +34,8 @@ public class BelTEcbOldTests
         byte[] x = StringToByteArray("B194BAC80A08F53B366D008E584A5DE48504FA9D1BB6C7AC252E72C202FDCE0D5BE3D61217B96181FE6786AD716B89");
         string expectedY = "69CCA1C93557C9E3D66BC3E0FA88FA6E36F00CFED6D1CA1498C12798F4BEB2075F23102EF109710775017F73806DA9";
 
-        using var block = BeltHash.BelTBlock(key);
-        using var encryptor = BeltHash.BelTEcbEncryptTransform(block);
+        using var block = BeltHashOld.BelTBlock(key);
+        using var encryptor = BeltHashOld.BelTEcbEncryptTransform(block);
 
         byte[] actualY = encryptor.TransformFinalBlock(x, 0, x.Length);
 
@@ -50,8 +50,8 @@ public class BelTEcbOldTests
         byte[] y = StringToByteArray("E12BDC1AE28257EC703FCCF095EE8DF1C1AB76389FE678CAF7C6F860D5BB9C4FF33C657B637C306ADD4EA7799EB23D31");
         string expectedX = "0DC5300600CAB840B38448E5E993F421E55A239F2AB5C5D5FDB6E81B40938E2A54120CA3E6E19C7AD750FC3531DAEAB7";
 
-        using var block = BeltHash.BelTBlock(key);
-        using var decryptor = BeltHash.BelTEcbDecryptTransform(block);
+        using var block = BeltHashOld.BelTBlock(key);
+        using var decryptor = BeltHashOld.BelTEcbDecryptTransform(block);
 
         byte[] actualX = decryptor.TransformFinalBlock(y, 0, y.Length);
 
@@ -66,8 +66,8 @@ public class BelTEcbOldTests
         byte[] y = StringToByteArray("E12BDC1AE28257EC703FCCF095EE8DF1C1AB76389FE678CAF7C6F860D5BB9C4FF33C657B");
         string expectedX = "0DC5300600CAB840B38448E5E993F4215780A6E2B69EAFBB258726D7B6718523E55A239F";
 
-        using var block = BeltHash.BelTBlock(key);
-        using var decryptor = BeltHash.BelTEcbDecryptTransform(block);
+        using var block = BeltHashOld.BelTBlock(key);
+        using var decryptor = BeltHashOld.BelTEcbDecryptTransform(block);
 
         byte[] actualX = decryptor.TransformFinalBlock(y, 0, y.Length);
 
