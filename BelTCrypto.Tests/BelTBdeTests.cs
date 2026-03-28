@@ -12,7 +12,7 @@ internal class BelTBdeTests
     public void Setup() => _bde = BelTDiskEncryptionFactory.Create(BelTDiskEncryptionFactory.BeltDiskScheme.Bde);
 
     [Test]
-    public void Bde_TableA25_Encrypt()
+    public void Bde_TableA24_Encrypt()
     {
         // X = B194BAC8... (48 байт из таблицы H)
         var x = Core.BelTMath.H[..48];
@@ -39,7 +39,7 @@ internal class BelTBdeTests
         TestContext.Out.WriteLine($"Actual Y:   {BitConverter.ToString(actualY)}");
         TestContext.Out.WriteLine($"Expected Y: {BitConverter.ToString(expectedY)}");
 
-        Assert.That(actualY, Is.EqualTo(expectedY), "BDE Encrypt Table A.25 failed");
+        Assert.That(actualY, Is.EqualTo(expectedY), "BDE Encrypt Table A.24 failed");
     }
 
     [Test]
@@ -63,7 +63,7 @@ internal class BelTBdeTests
         _bde.Decrypt(y, k, s, actualX);
 
         TestContext.Out.WriteLine($"Actual X:   {BitConverter.ToString(actualX)}");
-        TestContext.Out.WriteLine($"Expected X: {BitConverter.ToString(expectedX.ToArray())}");
+        TestContext.Out.WriteLine($"Expected X: {BitConverter.ToString(expectedX)}");
 
         Assert.That(actualX, Is.EqualTo(expectedX.ToArray()), "BDE Decrypt Table A.25 failed");
     }
