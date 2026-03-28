@@ -5,7 +5,7 @@ namespace BelTCrypto.Core;
 
 internal class BelTWideBlock : IBelTWideBlock
 {
-    private IBelTBlock _block;
+    private readonly IBelTBlock _block;
 
     public BelTWideBlock(IBelTBlock block)
     {
