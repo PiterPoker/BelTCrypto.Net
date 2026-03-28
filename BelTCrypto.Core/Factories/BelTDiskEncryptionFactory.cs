@@ -9,7 +9,7 @@ public static class BelTDiskEncryptionFactory
     public static IDiskEncryption Create(BeltDiskScheme scheme) => scheme switch
     {
         BeltDiskScheme.Bde => new BelTBde(BelTBlockFactory.Create()),
-        BeltDiskScheme.Sde => new BelTSde(BelTBlockFactory.Create()),
+        BeltDiskScheme.Sde => new BelTSde(BelTBlockFactory.Create(), BelTBlockFactory.CreateWide()),
         _ => throw new CryptographicException($"Режим {scheme} не поддерживается для BelT"),
     };
 
