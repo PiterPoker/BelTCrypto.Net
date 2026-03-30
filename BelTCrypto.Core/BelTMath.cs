@@ -175,6 +175,21 @@ public static class BelTMath
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     ];
 
+    public static uint[] H24()
+    {
+        var c = H.AsSpan()[..24];
+
+        return
+    [
+        BinaryPrimitives.ReadUInt32LittleEndian(c[..4]),
+        BinaryPrimitives.ReadUInt32LittleEndian(c[4..8]),
+        BinaryPrimitives.ReadUInt32LittleEndian(c[8..12]),
+        BinaryPrimitives.ReadUInt32LittleEndian(c[12..16]),
+        BinaryPrimitives.ReadUInt32LittleEndian(c[16..20]),
+        BinaryPrimitives.ReadUInt32LittleEndian(c[20..24])
+    ];
+    }
+
     public static readonly byte[] H =
     [
         0xB1, 0x94, 0xBA, 0xC8, 0x0A, 0x08, 0xF5, 0x3B, 0x36, 0x6D, 0x00, 0x8E, 0x58, 0x4A, 0x5D, 0xE4,

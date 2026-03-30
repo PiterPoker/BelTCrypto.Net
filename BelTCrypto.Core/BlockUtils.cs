@@ -1,4 +1,5 @@
 ﻿using System.Buffers.Binary;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("BelTCrypto.Tests")]
@@ -25,5 +26,38 @@ internal static class BlockUtils
         BinaryPrimitives.WriteUInt32LittleEndian(y[4..8], b);
         BinaryPrimitives.WriteUInt32LittleEndian(y[8..12], c);
         BinaryPrimitives.WriteUInt32LittleEndian(y[12..16], d);
+    }
+
+    internal static void Str2Bin(ReadOnlySpan<ushort> u, int m, Span<byte> output)
+    {
+        BigInteger value = 0;
+        BigInteger mBI = m;
+        BigInteger power = 1;
+
+        // u[0] - младший символ, вес m^0
+        for (int i = 0; i < u.Length; i++)
+        {
+            value += (BigInteger)u[i] * power;
+            power *= mBI;
+        }
+
+        output.Clear();
+        // Пишем как Little-Endian. Это заполнит output[0], output[1]... 
+        // Если число меньше bj, остаток буфера останется нулями (правильный padding).
+        value.TryWriteBytes(output, out _, isUnsigned: true, isBigEndian: false);
+    }
+
+    internal static void Bin2Str(ReadOnlySpan<byte> t, int m, int nj, Span<ushort> output)
+    {
+        // Читаем как Little-Endian.
+        BigInteger value = new(t, isUnsigned: true, isBigEndian: false);
+        BigInteger mBI = m;
+
+        for (int i = 0; i < nj; i++)
+        {
+            // Первый остаток - это всегда коэффициент при m^0 (т.е. первый символ)
+            value = BigInteger.DivRem(value, mBI, out BigInteger remainder);
+            output[i] = (ushort)remainder;
+        }
     }
 }
