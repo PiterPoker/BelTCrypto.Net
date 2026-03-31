@@ -15,7 +15,7 @@
 * **Базовые:** `belt-block` (128/192/256 бит), `belt-hash`, `belt-compress`.
 * **Режимы:** `ECB`, `CBC`, `CFB`, `CTR`, `MAC`.
 * **Комбинированные (AEAD):** `belt-dwp`, `belt-che`.
-* **Управление ключами:** `belt-keyexpand`, `belt-keyrep`, `belt-keygen`, `belt-kwp`.
+* **Управление ключами:** `belt-keyexpand`, `belt-keyrep`, `belt-kwp`.
 * **Специальные:** `belt-bde`, `belt-sde` (дисковое шифрование), `belt-fmt` (форматное).
 
 ## Как запустить
