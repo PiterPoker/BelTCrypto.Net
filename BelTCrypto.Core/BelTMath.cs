@@ -85,6 +85,32 @@ public static class BelTMath
     /// </summary>
     public static class Block
     {
+
+        internal static void Expand(ReadOnlySpan<byte> sourceKey, Span<byte> expandedKey)
+        {
+            // Копируем исходные K1...K6 (24 байта) в позиции K1...K6 выходного ключа
+            sourceKey.CopyTo(expandedKey.Slice(0, 24));
+
+            // Извлекаем фрагменты Ki как 32-битные целые числа (Little-Endian согласно СТБ)
+            uint k1 = BinaryPrimitives.ReadUInt32LittleEndian(sourceKey.Slice(0, 4));
+            uint k2 = BinaryPrimitives.ReadUInt32LittleEndian(sourceKey.Slice(4, 4));
+            uint k3 = BinaryPrimitives.ReadUInt32LittleEndian(sourceKey.Slice(8, 4));
+
+            uint k4 = BinaryPrimitives.ReadUInt32LittleEndian(sourceKey.Slice(12, 4));
+            uint k5 = BinaryPrimitives.ReadUInt32LittleEndian(sourceKey.Slice(16, 4));
+            uint k6 = BinaryPrimitives.ReadUInt32LittleEndian(sourceKey.Slice(20, 4));
+
+            // 1) K7 ← K1 ⊕ K2 ⊕ K3;
+            uint k7 = k1 ^ k2 ^ k3;
+            BinaryPrimitives.WriteUInt32LittleEndian(expandedKey.Slice(24, 4), k7);
+
+            // 2) K8 ← K4 ⊕ K5 ⊕ K6.
+            uint k8 = k4 ^ k5 ^ k6;
+            BinaryPrimitives.WriteUInt32LittleEndian(expandedKey.Slice(28, 4), k8);
+
+            // 4 Возвратить K.
+        }
+
         // Инкремент тоже лучше делать без ветвлений, если он работает с секретными IV
         public static void Increment(Span<byte> s)
         {
@@ -147,6 +173,17 @@ public static class BelTMath
     /// </summary>
     public static class Word
     {
+
+        internal static void Expand(ReadOnlySpan<byte> sourceKey, Span<byte> expandedKey)
+        {
+            // Копируем K1..K4 в начало (октеты 0..15)
+            sourceKey.CopyTo(expandedKey.Slice(0, 16));
+            // 1) K5 ← K1; 2) K6 ← K2; 3) K7 ← K3; 4) K8 ← K4. (октеты 16..31)
+            sourceKey.CopyTo(expandedKey.Slice(16, 16));
+
+            // 4 Возвратить K.
+        }
+
         /// <summary>
         /// Сдвиг в сторону старших разрядов (влево в регистре).
         /// Соответствует ShHi в стандарте.
@@ -173,6 +210,16 @@ public static class BelTMath
     public static readonly byte[] C = [
         0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    ];
+
+
+    public static readonly byte[] R24 = [
+        0xB1, 0x94, 0xBA, 0xC8,
+        0x5B, 0xE3, 0xD6, 0x12,
+        0x5C, 0xB0, 0xC0, 0xFF,
+        0xE1, 0x2B, 0xDC, 0x1A,
+        0xC1, 0xAB, 0x76, 0x38,
+        0xF3, 0x3C, 0x65, 0x7B
     ];
 
     public static uint[] H24()
