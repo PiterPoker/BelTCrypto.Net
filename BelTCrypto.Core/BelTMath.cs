@@ -85,6 +85,58 @@ public static class BelTMath
     /// </summary>
     public static class Block
     {
+
+        public static void Expand(ReadOnlySpan<byte> sourceKey, Span<byte> expandedKey)
+        {
+            // 8.1.1 Интерфейс: n — количество 32-битных фрагментов (4, 6 или 8)
+            int n = sourceKey.Length / 4;
+
+            if (n != 4 && n != 6 && n != 8)
+                throw new ArgumentException("n должно быть равно 4, 6 или 8 (16, 24 или 32 байта).");
+
+            if (expandedKey.Length < 32)
+                throw new ArgumentException("Выходной буфер должен быть не менее 32 байт.");
+
+            // 1 Если n=4, то выполнить:
+            if (n == 4)
+            {
+                // Копируем K1..K4 в начало (октеты 0..15)
+                sourceKey.CopyTo(expandedKey.Slice(0, 16));
+                // 1) K5 ← K1; 2) K6 ← K2; 3) K7 ← K3; 4) K8 ← K4. (октеты 16..31)
+                sourceKey.CopyTo(expandedKey.Slice(16, 16));
+            }
+            // 2 Если n=6, то выполнить:
+            else if (n == 6)
+            {
+                // Копируем исходные K1...K6 (24 байта) в позиции K1...K6 выходного ключа
+                sourceKey.CopyTo(expandedKey.Slice(0, 24));
+
+                // Извлекаем фрагменты Ki как 32-битные целые числа (Little-Endian согласно СТБ)
+                uint k1 = BinaryPrimitives.ReadUInt32LittleEndian(sourceKey.Slice(0, 4));
+                uint k2 = BinaryPrimitives.ReadUInt32LittleEndian(sourceKey.Slice(4, 4));
+                uint k3 = BinaryPrimitives.ReadUInt32LittleEndian(sourceKey.Slice(8, 4));
+
+                uint k4 = BinaryPrimitives.ReadUInt32LittleEndian(sourceKey.Slice(12, 4));
+                uint k5 = BinaryPrimitives.ReadUInt32LittleEndian(sourceKey.Slice(16, 4));
+                uint k6 = BinaryPrimitives.ReadUInt32LittleEndian(sourceKey.Slice(20, 4));
+
+                // 1) K7 ← K1 ⊕ K2 ⊕ K3;
+                uint k7 = k1 ^ k2 ^ k3;
+                BinaryPrimitives.WriteUInt32LittleEndian(expandedKey.Slice(24, 4), k7);
+
+                // 2) K8 ← K4 ⊕ K5 ⊕ K6.
+                uint k8 = k4 ^ k5 ^ k6;
+                BinaryPrimitives.WriteUInt32LittleEndian(expandedKey.Slice(28, 4), k8);
+            }
+            // 3 Установить K ← K1 ‖ K2 ‖... ‖ K8. (Для случая n=8)
+            else if (n == 8)
+            {
+                sourceKey.CopyTo(expandedKey);
+            }
+
+            // 4 Возвратить K.
+        }
+
         // Инкремент тоже лучше делать без ветвлений, если он работает с секретными IV
         public static void Increment(Span<byte> s)
         {
