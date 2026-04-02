@@ -1,5 +1,6 @@
 ﻿using BelTCrypto.Core.Interfaces;
 using System.Buffers.Binary;
+using System.Security.Cryptography;
 
 namespace BelTCrypto.Core;
 
@@ -53,38 +54,44 @@ internal class BelTKeyService : IBelTKeyService
     public void Rep(ReadOnlySpan<byte> x, ReadOnlySpan<byte> d, ReadOnlySpan<byte> i, int mBits, Span<byte> y)
     {
         int nBits = x.Length * 8;
-
-        // 1) Присвоить переменной r значение
         uint r = GetRConstant(nBits, mBits);
 
-        // 2) s ← belt-keyexpand(X)
+        // Выделяем всю память на стеке ДО блока try
         Span<byte> sExpand = stackalloc byte[32];
-        Expand(x, sExpand);
-
-        // Подготовка входа для belt-compress (512 бит / 64 байта)
         Span<byte> compressInput = stackalloc byte[64];
+        Span<byte> sCompress = stackalloc byte[32];
+        Span<byte> dummyS = stackalloc byte[16];
 
-        // r ‖ D (4 + 12 = 16 байт)
-        BinaryPrimitives.WriteUInt32LittleEndian(compressInput[..4], r);
-        d.CopyTo(compressInput.Slice(4, 12));
+        try
+        {
+            // 2) s ← belt-keyexpand(X)
+            Expand(x, sExpand);
 
-        // I (16 байт)
-        i.CopyTo(compressInput.Slice(16, 16));
+            // r ‖ D (4 + 12 = 16 байт)
+            BinaryPrimitives.WriteUInt32LittleEndian(compressInput[..4], r);
+            d.CopyTo(compressInput.Slice(4, 12));
 
-        // s (32 байта)
-        sExpand.CopyTo(compressInput.Slice(32, 32));
+            // I (16 байт)
+            i.CopyTo(compressInput.Slice(16, 16));
 
-        // 3) Установить (⊥,s) ← belt-compress(r ‖ D ‖ I ‖ s)
-        Span<byte> sCompress = stackalloc byte[32]; // Результат Y компрессора (256 бит)
-        Span<byte> dummyS = stackalloc byte[16];   // Промежуточный результат S (игнорируется)
+            // s (32 байта)
+            sExpand.CopyTo(compressInput.Slice(32, 32));
 
-        _compressor.Compress(compressInput, dummyS, sCompress);
+            // 3) Установить (⊥,s) ← belt-compress(r ‖ D ‖ I ‖ s)
+            _compressor.Compress(compressInput, dummyS, sCompress);
 
-        // 4) Установить Y ← Lo(s, m)
-        int mBytes = mBits / 8;
-        sCompress[..mBytes].CopyTo(y);
-
-        // 5) Возвратить Y
+            // 4) Установить Y ← Lo(s, m)
+            int mBytes = mBits / 8;
+            sCompress[..mBytes].CopyTo(y);
+        }
+        finally
+        {
+            // 5) ГАРАНТИРОВАННАЯ очистка всего ключевого материала на стеке
+            CryptographicOperations.ZeroMemory(sExpand);
+            CryptographicOperations.ZeroMemory(compressInput);
+            CryptographicOperations.ZeroMemory(sCompress);
+            CryptographicOperations.ZeroMemory(dummyS);
+        }
     }
 
     private static uint GetRConstant(int n, int m)
