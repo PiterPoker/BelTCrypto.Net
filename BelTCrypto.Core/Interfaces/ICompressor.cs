@@ -2,8 +2,6 @@
 
 public interface ICompressor
 {
-    [Obsolete("Метод Compress не реализован и может быть удалён в будущих версиях.")]
-    (byte[] S, byte[] Y) Compress(ReadOnlySpan<byte> x) => throw new NotImplementedException();
     /// <summary>
     /// Алгоритм сжатия belt-compress согласно СТБ 34.101.31 (6.3).
     /// </summary>
